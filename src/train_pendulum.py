@@ -6,12 +6,11 @@ from stable_baselines3.common.env_util import make_vec_env
 
 from custom_callback import LoggingCallback
 
-ENV_TYPE = 1  # 0 for Pendulum, 1 for InvertedDoublePendulum
+ENV_TYPE = 0  # 0 for Pendulum, 1 for InvertedDoublePendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-
 
 
 if ENV_TYPE == 0:
