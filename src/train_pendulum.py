@@ -15,17 +15,30 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
 
 if ENV_TYPE == 0:
     env_name = "Pendulum-v1"
-    env = make_vec_env(env_name, n_envs=1)
+    env = make_vec_env(env_name, n_envs=4)
+
+    if MODE != "stable":
+        raise ValueError("Pendulum-v1 is only tested for stable control. ")
+    if MODEL_TYPE != "SAC":
+        raise ValueError("Pendulum-v1 is only tested for SAC. ")
 
     if LOAD_MODEL:
-        model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
+        try:
+            model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
+        except FileNotFoundError:
+            print("Model not found. Training a new model.")
+            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
     else:
         model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
 
     model.learn(
-        total_timesteps=20000, callback=LoggingCallback(log_interval=1000, mode=MODE)
+        total_timesteps=1e5,
+        callback=LoggingCallback(
+            log_interval=1000, model_name="sac", mode=MODE, env_type=ENV_TYPE
+        ),
     )
     model.save(f"{DATA_DIR}/sac_pendulum_{MODE}.zip")
+
 elif ENV_TYPE == 1:
     gym.register(
         id="CustomInvertedDoublePendulum-v1",
@@ -52,7 +65,9 @@ elif ENV_TYPE == 1:
 
         model.learn(
             total_timesteps=1e5,
-            callback=LoggingCallback(log_interval=2000, model_name="sac"),
+            callback=LoggingCallback(
+                log_interval=2000, model_name="sac", mode=MODE, env_type=ENV_TYPE
+            ),
         )
         model.save(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
     elif MODEL_TYPE == "PPO":
@@ -76,6 +91,8 @@ elif ENV_TYPE == 1:
 
         model.learn(
             total_timesteps=1e6,
-            callback=LoggingCallback(log_interval=1000, model_name="ppo"),
+            callback=LoggingCallback(
+                log_interval=1000, model_name="ppo", mode=MODE, env_type=ENV_TYPE
+            ),
         )
         model.save(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
