@@ -95,8 +95,9 @@ while not done:
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
         f"current perturbation: {perturbation}\n"
+        "\n"
         "press 'r' to reset\n"
-        "press left and right arrows to apply perturbation\n"
+        "press \u2190 and \u2192 to apply perturbation\n"
     )
     text = font.render(doc_str, True, (0, 0, 0))
     screen.blit(text, (20, 40))
