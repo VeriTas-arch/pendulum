@@ -1,0 +1,44 @@
+<mujoco model="rotary_double_pendulum">
+    <compiler angle="radian" coordinate="local" />
+    <option gravity="0 0 -9.81" integrator="RK4" timestep="0.02" />
+
+    <worldbody>
+        <!-- 固定底座 -->
+        <body name="base" pos="0 0 0">
+            <!-- 绕Z轴的旋转关节 -->
+            <joint name="rotary_joint" type="hinge" axis="0 0 1" pos="0 0 0" limited="false"
+                damping="0.05" />
+
+            <!-- 水平旋转臂 -->
+            <body name="arm" pos="0 0 0">
+                <geom name="arm_geom" type="capsule" fromto="0 0 0 0.3 0 0" size="0.02" mass="10"
+                    rgba="0.2 0.2 0.8 1" />
+
+                <!-- 垂摆1：绕X轴 -->
+                <body name="pend1" pos="0.3 0 0">
+                    <joint name="hinge1" type="hinge" axis="1 0 0" pos="0 0 0" limited="false"
+                        damping="0.05" />
+                    <geom name="pend1_geom" type="capsule" fromto="0 0 0 0 0 -0.5" size="0.02"
+                        mass="10"
+                        rgba="0.8 0.2 0.2 1" />
+
+                    <!-- 垂摆2：再绕X轴 -->
+                    <body name="pend2" pos="0 0 -0.5">
+                        <joint name="hinge2" type="hinge" axis="1 0 0" pos="0 0 0" limited="false"
+                            damping="0.05" />
+                        <geom name="pend2_geom" type="capsule" fromto="0 0 0 0 0 -0.5" size="0.02"
+                            mass="10"
+                            rgba="0.2 0.8 0.2 1" />
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <!-- 控制第一个旋转关节 -->
+        <motor name="rotary_motor" joint="rotary_joint" ctrlrange="-5 5" gear="1" />
+        <motor name="hinge1_motor" joint="hinge1" ctrlrange="-5 5" gear="1" />
+        <motor name="hinge2_motor" joint="hinge2" ctrlrange="-5 5" gear="1" />
+    </actuator>
+</mujoco>
