@@ -26,9 +26,7 @@ if ENV_TYPE == 0:
     if LOAD_MODEL:
         try:
             if EXTRA is not None:
-                model = SAC.load(
-                    f"{DATA_DIR}/sac_pendulum_{MODE}_{EXTRA}.zip", env=env
-                )
+                model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}_{EXTRA}.zip", env=env)
             else:
                 model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
         except FileNotFoundError:
@@ -68,7 +66,8 @@ elif ENV_TYPE == 1:
         if LOAD_MODEL:
             if EXTRA is not None:
                 model = SAC.load(
-                    f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip", env=env
+                    f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip",
+                    env=env,
                 )
             else:
                 model = SAC.load(
@@ -80,7 +79,11 @@ elif ENV_TYPE == 1:
         model.learn(
             total_timesteps=1e6,
             callback=LoggingCallback(
-                log_interval=2000, model_name="sac", mode=MODE, env_type=ENV_TYPE, extra=EXTRA
+                log_interval=2000,
+                model_name="sac",
+                mode=MODE,
+                env_type=ENV_TYPE,
+                extra=EXTRA,
             ),
         )
 
@@ -93,7 +96,8 @@ elif ENV_TYPE == 1:
         if LOAD_MODEL:
             if EXTRA is not None:
                 model = PPO.load(
-                    f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip", env=env
+                    f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip",
+                    env=env,
                 )
             else:
                 model = PPO.load(f"ppo_inverted_double_pendulum_{MODE}.zip", env=env)
@@ -116,7 +120,11 @@ elif ENV_TYPE == 1:
         model.learn(
             total_timesteps=1e6,
             callback=LoggingCallback(
-                log_interval=1000, model_name="ppo", mode=MODE, env_type=ENV_TYPE, extra=EXTRA
+                log_interval=1000,
+                model_name="ppo",
+                mode=MODE,
+                env_type=ENV_TYPE,
+                extra=EXTRA,
             ),
         )
 
