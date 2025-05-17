@@ -8,10 +8,10 @@ resolve_matplotlib_error()
 plt.ion()
 
 ### Train
-env = gym.make('InvertedDoublePendulum-v4', render_mode='human')
+env = gym.make("InvertedDoublePendulum-v4", render_mode="human")
 agent = SACAgent(env=env)
 
-epochs = 1000#int(input("EPOCHS: "))
+epochs = 1000  # int(input("EPOCHS: "))
 trained_agent = agent.train(epochs)
 
 showcase(trained_agent)

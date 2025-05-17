@@ -18,7 +18,7 @@ class SACAgent:
         self.ACTOR_LEARNING_RATE = 3e-4
         self.CRITIC_LEARNING_RATE = 3e-4
         self.TAU = 5e-3
-        self.ALPHA = 1/3
+        self.ALPHA = 1 / 3
 
         self.env = env
         self.state_dim = env.observation_space.shape[0]
@@ -26,7 +26,7 @@ class SACAgent:
         self.action_bound = env.action_space.high[0]
 
         self.actor = Actor(self.action_dim, self.action_bound)
-        
+
         self.critic_1 = Critic(self.action_dim, self.state_dim)
         self.target_critic_1 = deepcopy(self.critic_1)
         self.target_critic_1.load_state_dict(self.critic_1.state_dict())
@@ -35,9 +35,15 @@ class SACAgent:
         self.target_critic_2 = deepcopy(self.critic_2)
         self.target_critic_2.load_state_dict(self.critic_2.state_dict())
 
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=self.ACTOR_LEARNING_RATE)
-        self.critic_1_opt = torch.optim.Adam(self.critic_1.parameters(), lr=self.CRITIC_LEARNING_RATE)
-        self.critic_2_opt = torch.optim.Adam(self.critic_2.parameters(), lr=self.CRITIC_LEARNING_RATE)
+        self.actor_opt = torch.optim.Adam(
+            self.actor.parameters(), lr=self.ACTOR_LEARNING_RATE
+        )
+        self.critic_1_opt = torch.optim.Adam(
+            self.critic_1.parameters(), lr=self.CRITIC_LEARNING_RATE
+        )
+        self.critic_2_opt = torch.optim.Adam(
+            self.critic_2.parameters(), lr=self.CRITIC_LEARNING_RATE
+        )
 
         self.buffer = ReplayBuffer(self.BUFFER_SIZE)
 
@@ -45,15 +51,15 @@ class SACAgent:
 
     def save_agent(self):
         import os
-        from datetime import datetime 
+        from datetime import datetime
 
-        time = datetime.now().time().strftime('%H:%M')
-        PATH = f'./saved_models/{time}'
+        time = datetime.now().time().strftime("%H:%M")
+        PATH = f"./saved_models/{time}"
         os.makedirs(PATH, exist_ok=True)
 
-        torch.save(self.actor.state_dict(), PATH + '/actor.pth')
-        torch.save(self.critic_1.state_dict(), PATH + '/critic_1.pth')
-        torch.save(self.critic_2.state_dict(), PATH + '/critic_2.pth')
+        torch.save(self.actor.state_dict(), PATH + "/actor.pth")
+        torch.save(self.critic_1.state_dict(), PATH + "/critic_1.pth")
+        torch.save(self.critic_2.state_dict(), PATH + "/critic_2.pth")
         torch.save(self.target_critic_1.state_dict(), PATH + "/target_critic_1.pth")
         torch.save(self.target_critic_2.state_dict(), PATH + "/target_critic_2.pth")
 
@@ -67,7 +73,7 @@ class SACAgent:
             else:
                 action, _ = self.actor.sample_normal(mu, std, reparam=False)
         return action.numpy()[0]
-    
+
     def update_target_network(self):
         phi_1 = self.critic_1.state_dict()
         phi_2 = self.critic_2.state_dict()
@@ -75,22 +81,26 @@ class SACAgent:
         target_phi_2 = self.target_critic_2.state_dict()
 
         for key in phi_1.keys():
-            target_phi_1[key] = self.TAU * phi_1[key] + (1 - self.TAU) * target_phi_1[key]
-            target_phi_2[key] = self.TAU * phi_2[key] + (1 - self.TAU) * target_phi_2[key]
+            target_phi_1[key] = (
+                self.TAU * phi_1[key] + (1 - self.TAU) * target_phi_1[key]
+            )
+            target_phi_2[key] = (
+                self.TAU * phi_2[key] + (1 - self.TAU) * target_phi_2[key]
+            )
 
         self.target_critic_1.load_state_dict(target_phi_1)
         self.target_critic_2.load_state_dict(target_phi_2)
 
     def critic_learn(self, states, actions, q_targets):
         q_1 = self.critic_1([states, actions])
-        loss_1 = torch.mean( (q_1 - q_targets) ** 2)
+        loss_1 = torch.mean((q_1 - q_targets) ** 2)
 
         self.critic_1_opt.zero_grad()
         loss_1.backward()
         self.critic_1_opt.step()
 
         q_2 = self.critic_2([states, actions])
-        loss_2 = torch.mean( (q_2 - q_targets) ** 2)
+        loss_2 = torch.mean((q_2 - q_targets) ** 2)
 
         self.critic_2_opt.zero_grad()
         loss_2.backward()
@@ -120,44 +130,60 @@ class SACAgent:
                 y_k[i] = rewards[i] + self.GAMMA * q_values[i]
 
         return torch.from_numpy(y_k)
-    
+
     def train(self, max_episode_num, save=False):
-        #self.update_target_network()
+        # self.update_target_network()
 
         for ep in tqdm(range(max_episode_num)):
             time, episode_reward, truncated, terminated = 0, 0, False, False
             state, _ = self.env.reset()
 
-            if ep % 10 == 0: 
+            if ep % 10 == 0:
                 live_plot(self.save_epi_reward)
 
             while not truncated and not terminated and time < 500:
                 action = self.get_action(torch.from_numpy(state).to(torch.float32))
                 action = np.clip(action, -self.action_bound, self.action_bound)
                 action = np.array(action).reshape(-1)
-                
+
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
 
-                self.buffer.add_buffer(state, action, reward, next_state, terminated or truncated)
+                self.buffer.add_buffer(
+                    state, action, reward, next_state, terminated or truncated
+                )
 
                 if self.buffer.count > 100:
-                    states, actions, rewards, next_states, dones = self.buffer.sample_batch(self.BATCH_SIZE)
+                    states, actions, rewards, next_states, dones = (
+                        self.buffer.sample_batch(self.BATCH_SIZE)
+                    )
 
                     with torch.no_grad():
-                        next_mu, next_std = self.actor(torch.tensor(next_states).to(torch.float32))
-                        next_actions, next_log_pdf = self.actor.sample_normal(next_mu, next_std, reparam=True)
+                        next_mu, next_std = self.actor(
+                            torch.tensor(next_states).to(torch.float32)
+                        )
+                        next_actions, next_log_pdf = self.actor.sample_normal(
+                            next_mu, next_std, reparam=True
+                        )
 
-                        target_qs_1 = self.target_critic_1([torch.tensor(next_states).to(torch.float32), next_actions])
-                        target_qs_2 = self.target_critic_2([torch.tensor(next_states).to(torch.float32), next_actions])
+                        target_qs_1 = self.target_critic_1(
+                            [torch.tensor(next_states).to(torch.float32), next_actions]
+                        )
+                        target_qs_2 = self.target_critic_2(
+                            [torch.tensor(next_states).to(torch.float32), next_actions]
+                        )
                         target_qs = torch.min(target_qs_1, target_qs_2)
 
                         target_qi = target_qs - self.ALPHA * next_log_pdf
-                    
+
                     y_i = self.q_target(rewards, target_qi.numpy(), dones)
 
-                    self.critic_learn(torch.tensor(states).to(torch.float32), torch.tensor(actions).to(torch.float32), torch.tensor(y_i).to(torch.float32))
+                    self.critic_learn(
+                        torch.tensor(states).to(torch.float32),
+                        torch.tensor(actions).to(torch.float32),
+                        torch.tensor(y_i).to(torch.float32),
+                    )
                     self.actor_learn(torch.tensor(states).to(torch.float32))
-                    
+
                     self.update_target_network()
 
                 state = next_state
@@ -165,11 +191,12 @@ class SACAgent:
                 time += 1
 
             self.save_epi_reward.append(episode_reward)
-            
+
         if save == True:
             self.save_agent()
 
         return self.save_epi_reward
+
 
 class Actor(nn.Module):
 
@@ -180,7 +207,7 @@ class Actor(nn.Module):
         self.action_bound = action_bound
         self.std_bound = [1e-6, 1.0]
 
-        self.l1 = nn.Linear(6, 128) # state_dim = 6
+        self.l1 = nn.Linear(6, 128)  # state_dim = 6
         self.l2 = nn.Linear(128, 128)
         self.l3 = nn.Linear(128, 16)
 
@@ -212,8 +239,9 @@ class Actor(nn.Module):
 
         return action, log_pdf
 
+
 class Critic(nn.Module):
-    
+
     def __init__(self, action_dim, state_dim):
         super().__init__()
 
@@ -223,9 +251,9 @@ class Critic(nn.Module):
         self.v1 = nn.Linear(self.state_dim, 128)
         self.a1 = nn.Linear(self.action_dim, 128)
 
-        self.l2 = nn.Linear(256, 128) # NOTE: 256 = v1.size + a1.size
+        self.l2 = nn.Linear(256, 128)  # NOTE: 256 = v1.size + a1.size
         self.l3 = nn.Linear(128, 64)
-        self.q =  nn.Linear(64, 1)
+        self.q = nn.Linear(64, 1)
 
     def forward(self, state_action):
         state, action = state_action[0], state_action[1]

@@ -4,7 +4,6 @@ Similar with official gymnasium cartpole, but has continuous action space
 Consider friction between cart&floor, cart&pole
 """
 
-
 import math
 from typing import Optional, Union
 
@@ -60,13 +59,12 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
     3. Truncation: Episode length is greater than 500 (200 for v0)
     """
 
-    metadata = {
-        "render_modes": ["human", "rgb_array"],
-        "render_fps": 50,
-    }
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 50}
 
     def __init__(self, render_mode: Optional[str] = None, reward_mode: int = 0):
-        assert reward_mode == 0 or reward_mode == 1 or reward_mode == 2, "Wrong reward mode parameter"
+        assert (
+            reward_mode == 0 or reward_mode == 1 or reward_mode == 2
+        ), "Wrong reward mode parameter"
 
         self.gravity = 9.8
         self.masscart = 1.0
@@ -76,11 +74,15 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         self.polemass_length = self.masspole * self.length * 2
         self.fric_coef = 0.05  # friction between floor and cart
         self.fric_rot = 0.03  # friction between cart and pole
-        self.force_mag = 20.0  # max. abs. value of force. (-force_mag < force < +force_mag)
+        self.force_mag = (
+            20.0  # max. abs. value of force. (-force_mag < force < +force_mag)
+        )
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = "euler"  # simulation step update mode. supports euler and semi-implicit euler
 
-        self.destination = 0.0  # destination x coordinate (only for modified ISE reward)
+        self.destination = (
+            0.0  # destination x coordinate (only for modified ISE reward)
+        )
 
         # Angle at which to fail the episode
         self.theta_threshold_radians = 12 * 2 * math.pi / 360
@@ -99,7 +101,9 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         )
 
         # Define action and observation space. spaces.Discrete() for discrete action/observation space
-        self.action_space = spaces.Box(-self.force_mag, self.force_mag, dtype=np.float32)
+        self.action_space = spaces.Box(
+            -self.force_mag, self.force_mag, dtype=np.float32
+        )
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
 
         # States history
@@ -118,10 +122,14 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
         self.steps_beyond_terminated = None
 
     def step(self, action):
-        err_msg = "invalid action detected. Please set action value between {0} and {1}".format(-self.force_mag, self.force_mag)
+        err_msg = "invalid action detected. Please set action value between {0} and {1}".format(
+            -self.force_mag, self.force_mag
+        )
         ### action을 torch.tensor로 받아서 밑부분을 수정했습니다
         import torch
-        if isinstance(action, torch.Tensor): action = action.item()
+
+        if isinstance(action, torch.Tensor):
+            action = action.item()
         assert -self.force_mag <= action and action <= self.force_mag, err_msg
         assert self.state is not None, "Call reset before using step method."
         x, x_dot, theta, theta_dot = self.state
@@ -144,20 +152,39 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
 
         # with friction
 
-        thetaacc = 0 # for initial n_c calculation
-        n_c = self.total_mass * self.gravity - self.polemass_length * (thetaacc * sintheta + theta_dot**2 * costheta)
+        thetaacc = 0  # for initial n_c calculation
+        n_c = self.total_mass * self.gravity - self.polemass_length * (
+            thetaacc * sintheta + theta_dot**2 * costheta
+        )
         temp = (
-            force + self.polemass_length * theta_dot**2 * (sintheta + self.fric_coef * math.copysign(1, n_c * x_dot) * costheta)
+            force
+            + self.polemass_length
+            * theta_dot**2
+            * (sintheta + self.fric_coef * math.copysign(1, n_c * x_dot) * costheta)
         ) / self.total_mass
         temp2 = (
-            force + self.polemass_length * (theta_dot**2 * sintheta - thetaacc * costheta)
+            force
+            + self.polemass_length * (theta_dot**2 * sintheta - thetaacc * costheta)
         ) / self.total_mass
-        thetaacc = (self.gravity * sintheta - costheta * (temp - self.fric_coef * self.gravity * math.copysign(1, n_c * x_dot)) - (self.fric_rot * theta_dot) / (self.polemass_length)) / (
-            self.length * (4.0 / 3.0 - self.masspole * costheta * (costheta - self.fric_coef * math.copysign(1, n_c * x_dot)) / self.total_mass)
+        thetaacc = (
+            self.gravity * sintheta
+            - costheta
+            * (temp - self.fric_coef * self.gravity * math.copysign(1, n_c * x_dot))
+            - (self.fric_rot * theta_dot) / (self.polemass_length)
+        ) / (
+            self.length
+            * (
+                4.0 / 3.0
+                - self.masspole
+                * costheta
+                * (costheta - self.fric_coef * math.copysign(1, n_c * x_dot))
+                / self.total_mass
+            )
         )
-        xacc = temp2 - self.fric_coef * n_c * math.copysign(1, n_c * x_dot) / self.total_mass
-
-        
+        xacc = (
+            temp2
+            - self.fric_coef * n_c * math.copysign(1, n_c * x_dot) / self.total_mass
+        )
 
         if self.kinematics_integrator == "euler":
             x = x + self.tau * x_dot
@@ -193,9 +220,11 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
                 else:
                     reward = 1.0
             if self.reward_mode == 2:
-                norm_dist_x = scipy.stats.norm(loc = 0, scale = 0.5)
-                norm_dist_theta = scipy.stats.norm(loc = 0, scale = 0.1)
-                reward = 0.5 * math.sqrt(2 * 3.14) * norm_dist_x.pdf(self.state[0]) + 0.1 * math.sqrt(2 * 3.14) * norm_dist_theta.pdf(self.state[2])
+                norm_dist_x = scipy.stats.norm(loc=0, scale=0.5)
+                norm_dist_theta = scipy.stats.norm(loc=0, scale=0.1)
+                reward = 0.5 * math.sqrt(2 * 3.14) * norm_dist_x.pdf(
+                    self.state[0]
+                ) + 0.1 * math.sqrt(2 * 3.14) * norm_dist_theta.pdf(self.state[2])
         elif self.steps_beyond_terminated is None:
             # Pole just fell!
             self.steps_beyond_terminated = 0
@@ -215,12 +244,7 @@ class CartPoleEnv(gym.Env[np.ndarray, Union[int, np.ndarray]]):
             self.render()
         return np.array(self.state, dtype=np.float32), reward, terminated, False, {}
 
-    def reset(
-        self,
-        *,
-        seed: Optional[int] = None,
-        options: Optional[dict] = None,
-    ):
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         # Note that if you use custom reset bounds, it may lead to out-of-bound
         # state/observations.

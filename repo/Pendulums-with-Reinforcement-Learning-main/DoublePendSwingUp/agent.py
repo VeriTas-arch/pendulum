@@ -16,7 +16,11 @@ agent = SACAgent(env=env, load=load)
 
 if load:
     n_showcase = 2
-    showcase(agent, env=dpend.DoublePendEnv(reward_mode=4, render_mode='human'), n_showcase=n_showcase)
+    showcase(
+        agent,
+        env=dpend.DoublePendEnv(reward_mode=4, render_mode="human"),
+        n_showcase=n_showcase,
+    )
 
 # train the agent if not load
 if not load:
@@ -32,5 +36,7 @@ if not load:
     # plot moving average
     final_plot(scores)
 
-    #see how the trained agent performs
-    showcase(agent, env=dpend.DoublePendEnv(reward_mode=4, render_mode='human'), n_showcase=5)
+    # see how the trained agent performs
+    showcase(
+        agent, env=dpend.DoublePendEnv(reward_mode=4, render_mode="human"), n_showcase=5
+    )

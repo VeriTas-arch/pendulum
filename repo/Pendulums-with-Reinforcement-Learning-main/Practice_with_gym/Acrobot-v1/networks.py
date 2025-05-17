@@ -11,9 +11,9 @@ class Actor(nn.Module):
 
         self.action_dim = action_dim
         self.action_bound = action_bound
-        self.std_bound = [1e-6, 1.]
+        self.std_bound = [1e-6, 1.0]
 
-        self.l1 = nn.Linear(11, 256) # state_dim = 11
+        self.l1 = nn.Linear(11, 256)  # state_dim = 11
         self.l2 = nn.Linear(256, 256)
 
         self.mu = nn.Linear(256, self.action_dim)
@@ -40,8 +40,9 @@ class Actor(nn.Module):
 
         return action, log_pdf
 
+
 class Critic(nn.Module):
-    
+
     def __init__(self, action_dim, state_dim):
         super().__init__()
 
@@ -49,11 +50,13 @@ class Critic(nn.Module):
         self.state_dim = 11
 
         self.l1 = nn.Linear(self.state_dim + self.action_dim, 256)
-        self.l2 = nn.Linear(256, 256) 
-        self.q =  nn.Linear(256, 1)
+        self.l2 = nn.Linear(256, 256)
+        self.q = nn.Linear(256, 1)
 
     def forward(self, state_action):
-        state, action = state_action[0].to(torch.float32), state_action[1].to(torch.float32)
+        state, action = state_action[0].to(torch.float32), state_action[1].to(
+            torch.float32
+        )
 
         x = torch.cat([state, action], dim=1)
         x = F.relu(self.l1(x))

@@ -27,8 +27,8 @@ print("------Training Completed------")
 plt.ioff()
 plt.plot(agent.save_epi_reward)
 
-# plot moving average 
+# plot moving average
 final_plot(scores)
 
 # see how the trained agent performs
-showcase(agent, env=dpend.DoublePendEnv(reward_mode=3, render_mode='human'))
+showcase(agent, env=dpend.DoublePendEnv(reward_mode=3, render_mode="human"))

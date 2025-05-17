@@ -19,7 +19,9 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         self.logger.setLevel(logging.INFO)
         if not self.logger.hasHandlers():
             handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
+            handler.setFormatter(
+                logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+            )
             self.logger.addHandler(handler)
         self.logger.info(
             f"[INFO] CustomInvertedDoublePendulumEnv initialized with mode: {mode}"

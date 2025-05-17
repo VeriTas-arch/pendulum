@@ -7,9 +7,12 @@ import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 def resolve_matplotlib_error():
     import os
-    os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
 
 def showcase(actor, env, n_showcase):
 
@@ -29,34 +32,38 @@ def showcase(actor, env, n_showcase):
             action = np.array(action).reshape(-1)
             state, reward, terminated, truncated, _ = env.step(action)
             score += reward
-        
+
         scores.append(score)
 
     print(scores)
-    env.close() 
+    env.close()
+
 
 def final_plot(g1):
     import numpy as np
+
     resolve_matplotlib_error()
     plt.ioff()
 
     window_size = 10
-    moving_average = np.convolve(g1, np.ones(window_size) / window_size, mode='valid')
+    moving_average = np.convolve(g1, np.ones(window_size) / window_size, mode="valid")
 
-    plt.plot(moving_average, label='mAverage',color='red', linewidth=2.5)
+    plt.plot(moving_average, label="mAverage", color="red", linewidth=2.5)
     plt.legend()
     plt.draw()
     plt.show()
 
+
 def live_plot(scores):
-    
+
     plt.plot(scores)
     plt.grid(True)
     plt.draw()
     plt.gca().grid(True)
-    plt.xlabel('episodes')
-    plt.ylabel('scores')
+    plt.xlabel("episodes")
+    plt.ylabel("scores")
     plt.pause(0.001)
+
 
 class ReplayBuffer:
     def __init__(self, buffer_size):
@@ -71,7 +78,7 @@ class ReplayBuffer:
         if self.count < self.buffer_size:
             self.buffer.append(transition)
             self.count += 1
-        else: 
+        else:
             self.buffer.popleft()
             self.buffer.append(transition)
 

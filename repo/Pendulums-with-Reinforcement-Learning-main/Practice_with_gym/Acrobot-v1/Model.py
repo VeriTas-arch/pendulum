@@ -23,7 +23,7 @@ class SACAgent:
         self.action_bound = env.action_space.high[0]
 
         self.actor = Actor(self.action_dim, self.action_bound)
-        
+
         self.critic_1 = Critic(self.action_dim, self.state_dim)
         self.target_critic_1 = deepcopy(self.critic_1)
         self.target_critic_1.load_state_dict(self.critic_1.state_dict())
@@ -32,9 +32,15 @@ class SACAgent:
         self.target_critic_2 = deepcopy(self.critic_2)
         self.target_critic_2.load_state_dict(self.critic_2.state_dict())
 
-        self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=self.ACTOR_LEARNING_RATE)
-        self.critic_1_opt = torch.optim.Adam(self.critic_1.parameters(), lr=self.CRITIC_LEARNING_RATE)
-        self.critic_2_opt = torch.optim.Adam(self.critic_2.parameters(), lr=self.CRITIC_LEARNING_RATE)
+        self.actor_opt = torch.optim.Adam(
+            self.actor.parameters(), lr=self.ACTOR_LEARNING_RATE
+        )
+        self.critic_1_opt = torch.optim.Adam(
+            self.critic_1.parameters(), lr=self.CRITIC_LEARNING_RATE
+        )
+        self.critic_2_opt = torch.optim.Adam(
+            self.critic_2.parameters(), lr=self.CRITIC_LEARNING_RATE
+        )
 
         self.buffer = ReplayBuffer(self.BUFFER_SIZE)
         self.learning_starts = 100
@@ -47,7 +53,7 @@ class SACAgent:
             mu, std = self.actor(state)
             action, _ = self.actor.sample_normal(mu, std)
         return action.numpy()
-    
+
     def update_target_network(self):
         phi_1 = self.critic_1.state_dict()
         phi_2 = self.critic_2.state_dict()
@@ -55,22 +61,26 @@ class SACAgent:
         target_phi_2 = self.target_critic_2.state_dict()
 
         for key in phi_1.keys():
-            target_phi_1[key] = self.TAU * phi_1[key] + (1 - self.TAU) * target_phi_1[key]
-            target_phi_2[key] = self.TAU * phi_2[key] + (1 - self.TAU) * target_phi_2[key]
+            target_phi_1[key] = (
+                self.TAU * phi_1[key] + (1 - self.TAU) * target_phi_1[key]
+            )
+            target_phi_2[key] = (
+                self.TAU * phi_2[key] + (1 - self.TAU) * target_phi_2[key]
+            )
 
         self.target_critic_1.load_state_dict(target_phi_1)
         self.target_critic_2.load_state_dict(target_phi_2)
 
     def critic_learn(self, states, actions, q_targets):
         q_1 = self.critic_1([states, actions])
-        loss_1 = torch.mean( (q_1 - q_targets) ** 2)
+        loss_1 = torch.mean((q_1 - q_targets) ** 2)
 
         self.critic_1_opt.zero_grad()
         loss_1.backward()
         self.critic_1_opt.step()
 
         q_2 = self.critic_2([states, actions])
-        loss_2 = torch.mean( (q_2 - q_targets) ** 2)
+        loss_2 = torch.mean((q_2 - q_targets) ** 2)
 
         self.critic_2_opt.zero_grad()
         loss_2.backward()
@@ -100,7 +110,7 @@ class SACAgent:
                 y_k[i] = rewards[i] + self.GAMMA * q_values[i]
 
         return torch.from_numpy(y_k)
-    
+
     def train(self, max_episode_num):
         self.update_target_network()
 
@@ -108,36 +118,48 @@ class SACAgent:
             time, episode_reward, truncated, terminated = 0, 0, False, False
             state, _ = self.env.reset()
 
-            if ep % 10 == 0: 
+            if ep % 10 == 0:
                 live_plot(self.save_epi_reward, self.save_actions)
 
             while not truncated and not terminated and time < 500:
                 action = self.get_action(torch.from_numpy(state))
                 action = np.clip(action, -self.action_bound, self.action_bound)
-                
+
                 next_state, reward, terminated, truncated, _ = self.env.step(action)
-                
+
                 self.save_actions.append(reward)
 
-                self.buffer.add_buffer(state, action, reward, next_state, terminated or truncated)
+                self.buffer.add_buffer(
+                    state, action, reward, next_state, terminated or truncated
+                )
 
                 if self.buffer.count > self.learning_starts:
-                    states, actions, rewards, next_states, dones = self.buffer.sample_batch(self.BATCH_SIZE)
+                    states, actions, rewards, next_states, dones = (
+                        self.buffer.sample_batch(self.BATCH_SIZE)
+                    )
 
                     next_mu, next_std = self.actor(torch.tensor(next_states))
-                    next_actions, next_log_pdf = self.actor.sample_normal(next_mu, next_std)
+                    next_actions, next_log_pdf = self.actor.sample_normal(
+                        next_mu, next_std
+                    )
 
-                    target_qs_1 = self.target_critic_1([torch.tensor(next_states), next_actions])
-                    target_qs_2 = self.target_critic_2([torch.tensor(next_states), next_actions])
+                    target_qs_1 = self.target_critic_1(
+                        [torch.tensor(next_states), next_actions]
+                    )
+                    target_qs_2 = self.target_critic_2(
+                        [torch.tensor(next_states), next_actions]
+                    )
                     target_qs = torch.min(target_qs_1, target_qs_2)
 
                     target_qi = target_qs - self.ALPHA * next_log_pdf
-                    
+
                     y_i = self.q_target(rewards, target_qi.detach().numpy(), dones)
 
-                    self.critic_learn(torch.from_numpy(states), torch.from_numpy(actions), y_i)
+                    self.critic_learn(
+                        torch.from_numpy(states), torch.from_numpy(actions), y_i
+                    )
                     self.actor_learn(torch.from_numpy(states))
-                    
+
                     self.update_target_network()
 
                 state = next_state
@@ -145,7 +167,6 @@ class SACAgent:
                 time += 1
 
             self.save_epi_reward.append(episode_reward)
-            #print(episode_reward)
+            # print(episode_reward)
 
-        return self    
-
+        return self

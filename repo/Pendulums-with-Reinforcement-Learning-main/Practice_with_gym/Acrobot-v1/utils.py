@@ -6,15 +6,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def resolve_matplotlib_error():
     import os
-    os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+
 
 def showcase(model):
     n_episodes = 3
-    env = gym.make('InvertedDoublePendulum-v4', render_mode='human')
+    env = gym.make("InvertedDoublePendulum-v4", render_mode="human")
 
     for episode in range(n_episodes):
         state, _ = env.reset()
@@ -28,9 +31,8 @@ def showcase(model):
             action = np.clip(action, -model.action_bound, model.action_bound)
             state, reward, terminated, truncated, _ = env.step(action)
             print(reward)
-            
-            
-    env.close() 
+
+    env.close()
 
 
 def test_env(env):
@@ -47,28 +49,28 @@ def test_env(env):
             state = torch.tensor(state, dtype=torch.float32)
             state, reward, terminated, truncated, _ = env.step(action)
             print(reward)
-            
-            
-    env.close() 
+
+    env.close()
 
 
 def live_plot(g1, g2):
     plt.clf()
 
-    plt.subplot(2,1,1)
+    plt.subplot(2, 1, 1)
     plt.plot(g1)
-    plt.xlabel('epochs')
-    plt.ylabel('score')
+    plt.xlabel("epochs")
+    plt.ylabel("score")
 
-    plt.subplot(2,1,2)
+    plt.subplot(2, 1, 2)
     plt.plot(g2)
-    plt.xlabel('timesteps')
-    plt.ylabel('action')
+    plt.xlabel("timesteps")
+    plt.ylabel("action")
 
     plt.tight_layout()
     plt.draw()
     plt.pause(0.001)
-    
+
+
 class ReplayBuffer:
     def __init__(self, buffer_size):
         self.buffer_size = buffer_size
@@ -82,7 +84,7 @@ class ReplayBuffer:
         if self.count < self.buffer_size:
             self.buffer.append(transition)
             self.count += 1
-        else: 
+        else:
             self.buffer.popleft()
             self.buffer.append(transition)
 
