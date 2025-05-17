@@ -8,9 +8,10 @@ from custom_callback import LoggingCallback
 
 ENV_TYPE = 1  # 0 for Pendulum, 1 for InvertedDoublePendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
+MODE = "test"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
+EXTRA = "extra"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -24,7 +25,12 @@ if ENV_TYPE == 0:
 
     if LOAD_MODEL:
         try:
-            model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
+            if EXTRA is not None:
+                model = SAC.load(
+                    f"{DATA_DIR}/sac_pendulum_{MODE}_{EXTRA}.zip", env=env
+                )
+            else:
+                model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
         except FileNotFoundError:
             print("Model not found. Training a new model.")
             model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
@@ -37,7 +43,10 @@ if ENV_TYPE == 0:
             log_interval=1000, model_name="sac", mode=MODE, env_type=ENV_TYPE
         ),
     )
-    model.save(f"{DATA_DIR}/sac_pendulum_{MODE}.zip")
+    if EXTRA is not None:
+        model.save(f"{DATA_DIR}/sac_pendulum_{MODE}_{EXTRA}.zip")
+    else:
+        model.save(f"{DATA_DIR}/sac_pendulum_{MODE}.zip")
 
 elif ENV_TYPE == 1:
     gym.register(
@@ -57,22 +66,37 @@ elif ENV_TYPE == 1:
 
     if MODEL_TYPE == "SAC":
         if LOAD_MODEL:
-            model = SAC.load(
-                f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip", env=env
-            )
+            if EXTRA is not None:
+                model = SAC.load(
+                    f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip", env=env
+                )
+            else:
+                model = SAC.load(
+                    f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip", env=env
+                )
         else:
             model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
 
         model.learn(
-            total_timesteps=1e5,
+            total_timesteps=1e6,
             callback=LoggingCallback(
-                log_interval=2000, model_name="sac", mode=MODE, env_type=ENV_TYPE
+                log_interval=2000, model_name="sac", mode=MODE, env_type=ENV_TYPE, extra=EXTRA
             ),
         )
-        model.save(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
+
+        if EXTRA is not None:
+            model.save(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip")
+        else:
+            model.save(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
+
     elif MODEL_TYPE == "PPO":
         if LOAD_MODEL:
-            model = PPO.load(f"ppo_inverted_double_pendulum_{MODE}.zip", env=env)
+            if EXTRA is not None:
+                model = PPO.load(
+                    f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip", env=env
+                )
+            else:
+                model = PPO.load(f"ppo_inverted_double_pendulum_{MODE}.zip", env=env)
         else:
             model = PPO(
                 "MlpPolicy",
@@ -92,7 +116,11 @@ elif ENV_TYPE == 1:
         model.learn(
             total_timesteps=1e6,
             callback=LoggingCallback(
-                log_interval=1000, model_name="ppo", mode=MODE, env_type=ENV_TYPE
+                log_interval=1000, model_name="ppo", mode=MODE, env_type=ENV_TYPE, extra=EXTRA
             ),
         )
-        model.save(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
+
+        if EXTRA is not None:
+            model.save(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip")
+        else:
+            model.save(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")

@@ -8,10 +8,11 @@ from stable_baselines3 import PPO, SAC
 from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 1
-MODEL_TYPE = "PPO"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
+MODEL_TYPE = "SAC"  # SAC or PPO
+MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+EXTRA = None  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -34,14 +35,6 @@ font = pygame.font.SysFont("consolas", 24)
 
 # 初始化环境和模型
 if ENV_TYPE == 0:
-    env_name = "Pendulum-v1"
-    env = gym.make(env_name, render_mode="human")
-
-    if MODEL_TYPE == "SAC":
-        model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
-    elif MODEL_TYPE == "PPO":
-        model = PPO.load(f"{DATA_DIR}/ppo_pendulum_{MODE}.zip", env=env)
-
     raise ValueError(
         "Pendulum-v1 is not supported in the perturbation mode now."
         " Refer to `test_pendulum_old.py` if you want to test it."
@@ -56,14 +49,25 @@ elif ENV_TYPE == 1:
         gym.make("CustomInvertedDoublePendulum-v1", render_mode="human", mode=MODE)
     )
     if MODEL_TYPE == "SAC":
-        model = SAC.load(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
+        if EXTRA is not None:
+            model = SAC.load(
+                f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
+            )
+        else:
+            model = SAC.load(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
     elif MODEL_TYPE == "PPO":
-        model = PPO.load(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
+        if EXTRA is not None:
+            model = PPO.load(
+                f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
+            )
+        else:
+            model = PPO.load(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
 
 
 obs, info = env.reset()
 clock = pygame.time.Clock()
 perturbation = np.zeros(env.action_space.shape)
+
 
 done = False
 while not done:
