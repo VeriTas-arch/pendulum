@@ -24,7 +24,7 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             )
             self.logger.addHandler(handler)
         self.logger.info(
-            f"[INFO] CustomInvertedDoublePendulumEnv initialized with mode: {mode}"
+            f"CustomInvertedDoublePendulumEnv initialized with mode: {mode}"
         )
 
     def _get_body_id_by_name(self, name):

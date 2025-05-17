@@ -9,7 +9,7 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 1
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
+MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -35,12 +35,18 @@ font = pygame.font.SysFont("consolas", 24)
 # 初始化环境和模型
 if ENV_TYPE == 0:
     env_name = "Pendulum-v1"
-    env = gym.make(env_name, render_mode="human", mode=MODE)
+    env = gym.make(env_name, render_mode="human")
 
     if MODEL_TYPE == "SAC":
         model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
     elif MODEL_TYPE == "PPO":
         model = PPO.load(f"{DATA_DIR}/ppo_pendulum_{MODE}.zip", env=env)
+
+    raise ValueError(
+        "Pendulum-v1 is not supported in the perturbation mode now."
+        " Refer to `test_pendulum_old.py` if you want to test it."
+    )
+
 elif ENV_TYPE == 1:
     gym.register(
         id="CustomInvertedDoublePendulum-v1",
@@ -82,15 +88,19 @@ while not done:
     obs, reward, terminated, truncated, info = env.step(action)
 
     env.render()
-    # 在pygame窗口显示perturbation的大小
     screen.fill((255, 255, 255))
+
+    # 显示文本
     doc_str = (
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
-        f"current perturbation: {perturbation}"
+        f"current perturbation: {perturbation}\n"
+        "press 'r' to reset\n"
+        "press left and right arrows to apply perturbation\n"
     )
     text = font.render(doc_str, True, (0, 0, 0))
     screen.blit(text, (20, 40))
+
     pygame.display.flip()
     clock.tick(60)
 
