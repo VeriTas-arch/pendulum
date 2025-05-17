@@ -17,5 +17,7 @@ class PerturbWrapper(gym.Wrapper):
 
     def step(self, action):
         perturbed_action = action + self.perturbation
-        obs, reward, terminated, truncated, info = self.env.step(perturbed_action)  # gymnasium: step返回5项
+        obs, reward, terminated, truncated, info = self.env.step(
+            perturbed_action
+        )  # gymnasium: step返回5项
         return obs, reward, terminated, truncated, info
