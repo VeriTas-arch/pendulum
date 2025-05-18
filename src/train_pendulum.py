@@ -11,7 +11,7 @@ MODEL_TYPE = "PPO"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 LOAD_MODEL = False  # 是否加载模型
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-EXTRA = "exp"  # 额外的后缀，不加则设为 None
+EXTRA = None  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -100,7 +100,9 @@ elif ENV_TYPE == 1:
                     env=env,
                 )
             else:
-                model = PPO.load(f"ppo_inverted_double_pendulum_{MODE}.zip", env=env)
+                model = PPO.load(
+                    f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip", env=env
+                )
         else:
             model = PPO(
                 "MlpPolicy",
@@ -118,9 +120,9 @@ elif ENV_TYPE == 1:
             )
 
         model.learn(
-            total_timesteps=1e7,
+            total_timesteps=1e6,
             callback=LoggingCallback(
-                log_interval=2000,
+                log_interval=1000,
                 model_name="ppo",
                 mode=MODE,
                 env_type=ENV_TYPE,

@@ -8,7 +8,7 @@ from stable_baselines3 import PPO, SAC
 from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 1
-MODEL_TYPE = "SAC"  # SAC or PPO
+MODEL_TYPE = "PPO"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
