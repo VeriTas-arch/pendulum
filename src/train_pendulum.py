@@ -7,11 +7,11 @@ from stable_baselines3.common.env_util import make_vec_env
 from custom_callback import LoggingCallback
 
 ENV_TYPE = 1  # 0 for Pendulum, 1 for InvertedDoublePendulum
-MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
+MODEL_TYPE = "PPO"  # SAC or PPO
+MODE = "stable"  # test for swing up, stable for stable control
+LOAD_MODEL = False  # 是否加载模型
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-EXTRA = "extra"  # 额外的后缀，不加则设为 None
+EXTRA = "exp"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -118,9 +118,9 @@ elif ENV_TYPE == 1:
             )
 
         model.learn(
-            total_timesteps=1e6,
+            total_timesteps=1e7,
             callback=LoggingCallback(
-                log_interval=1000,
+                log_interval=2000,
                 model_name="ppo",
                 mode=MODE,
                 env_type=ENV_TYPE,
