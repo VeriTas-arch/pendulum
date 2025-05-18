@@ -1,10 +1,10 @@
 import time
 from pathlib import Path
-import numpy as np
 
 import glfw
 import mujoco
 import mujoco.viewer
+import numpy as np
 
 # 加载模型
 MODEL_NAME = "inverted_double_pendulum_exp"  # "rotary_inverted_double_pendulum"
