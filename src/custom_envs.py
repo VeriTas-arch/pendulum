@@ -2,11 +2,10 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
-DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum_exp.xml"
+DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
 RDIP_XML_DIR = f"{ASSET_DIR}/rotary_inverted_double_pendulum.xml"
 
 
@@ -22,7 +21,10 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if not self.logger.hasHandlers():
             handler = logging.StreamHandler()
             handler.setFormatter(
-                logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+                logging.Formatter(
+                    "%(asctime)s [%(levelname)s] %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
             )
             self.logger.addHandler(handler)
         self.logger.info(
@@ -51,7 +53,7 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0])
         elif self.mode == "stable":
-            pass
+            self.init_qpos = np.array([0.0, 0.0, 0])
         elif self.mode == "none":
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
@@ -78,13 +80,17 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ):
             self.sim.data.xfrc_applied[:] = 0.0
             self.sim.data.xfrc_applied[self.cart_body_id][0] = self.external_force
+
         obs, reward, terminated, truncated, info = super().step(action)
 
-        # 尝试暂时取消掉边界条件限制，不然会直接结束，不利于获取奖励
-        # x = obs[0]
-        # terminated = bool(np.abs(x) >= 3.95)
-        terminated = False
-        # print(obs[0])
+        if self.mode == "stable":
+            pass
+        elif self.mode == "test":
+            # 尝试暂时取消掉边界条件限制，不然会直接结束，不利于获取奖励
+            # x = obs[0]
+            # terminated = bool(np.abs(x) >= 3.95)
+            terminated = False
+            # print(obs[0])
 
         return obs, reward, terminated, truncated, info
 
