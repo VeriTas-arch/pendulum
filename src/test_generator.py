@@ -1,8 +1,9 @@
+import time
+from pathlib import Path
+
 import mujoco
 import mujoco.viewer
 import numpy as np
-from pathlib import Path
-import time
 
 # 加载模型
 MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
