@@ -1,5 +1,7 @@
 **/.vscode
 **/__pycache__/
-archive/stable-baselines3-master/
+/archive
+/repo
+
 
 **/MUJOCO_LOG.TXT

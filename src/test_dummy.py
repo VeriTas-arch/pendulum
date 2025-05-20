@@ -11,11 +11,12 @@ MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendul
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 XML_DIR = f"{ASSET_DIR}/{MODEL_NAME}.xml"
-MODEL = mujoco.MjModel.from_xml_path(XML_DIR)
-DATA = mujoco.MjData(MODEL)
+
+model = mujoco.MjModel.from_xml_path(XML_DIR)
+data = mujoco.MjData(model)
 
 # 初始姿态：轻微扰动
-DATA.qpos[:] = [0.0, np.pi, 0.0]
+data.qpos[:] = [0.0, np.pi, 0.0]
 
 # 控制参数
 STEP = 0.005
@@ -48,10 +49,10 @@ def control_callback(model, data):
 
 # 启动 Viewer（被动模式）
 with mujoco.viewer.launch_passive(
-    MODEL, DATA, key_callback=keyboard_callback
+    model, data, key_callback=keyboard_callback
 ) as viewer:
     while viewer.is_running():
-        control_callback(MODEL, DATA)
-        mujoco.mj_step(MODEL, DATA)
+        control_callback(model, data)
+        mujoco.mj_step(model, data)
         viewer.sync()
         time.sleep(STEP)
