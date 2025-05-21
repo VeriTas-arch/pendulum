@@ -4,8 +4,8 @@ import gymnasium as gym
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.env_util import make_vec_env
 
-from custom_callback import LoggingCallback
 import utils
+from custom_callback import LoggingCallback
 
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
