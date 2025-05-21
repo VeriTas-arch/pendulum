@@ -52,4 +52,14 @@ class LoggingCallback(BaseCallback):
                     self.model.save(
                         f"{DATA_DIR}/{self.model_name}_inverted_double_pendulum_{self.mode}.zip"
                     )
+            elif self.env_type == 2:
+                if self.extra is not None:
+                    self.model.save(
+                        f"{DATA_DIR}/{self.model_name}_rotary_inverted_double_pendulum_{self.mode}_{self.extra}.zip"
+                    )
+                else:
+                    self.model.save(
+                        f"{DATA_DIR}/{self.model_name}_rotary_inverted_double_pendulum_{self.mode}.zip"
+                    )
+
         return True

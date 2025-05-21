@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -15,7 +14,6 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         super().__init__(xml_file=DIP_XML_DIR, *args, **kwargs)
 
         self.mode = mode
-        self.external_force = 0.0
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
@@ -31,24 +29,6 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         self.logger.info(
             f"Custom Inverted Double Pendulum Env initialized with mode: {mode}"
         )
-
-    def _get_body_id_by_name(self, name):
-        model = self.model
-        if hasattr(model, "body_name2id"):
-            return model.body_name2id(name)
-        else:
-            for i in range(model.nbody):
-                if hasattr(model, "body"):
-                    body_name = model.body(i).name
-                else:
-                    body_name = model.names[
-                        model.name_bodyadr[i] : model.name_bodyadr[i + 1]
-                    ]
-                if isinstance(body_name, bytes):
-                    body_name = body_name.decode()
-                if body_name == name:
-                    return i
-            raise ValueError(f"Body name {name} not found")
 
     def reset_model(self):
         if self.mode == "test":
@@ -74,26 +54,25 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return self._get_obs()
 
     def step(self, action):
-        if (
-            hasattr(self, "sim")
-            and self.sim is not None
-            and hasattr(self, "cart_body_id")
-        ):
-            self.sim.data.xfrc_applied[:] = 0.0
-            self.sim.data.xfrc_applied[self.cart_body_id][0] = self.external_force
+        self.do_simulation(action, self.frame_skip)
 
-        obs, reward, terminated, truncated, info = super().step(action)
+        x, _, y = self.data.site_xpos[0]
+        observation = self._get_obs()
+        terminated = bool(y <= 1)
+        reward, reward_info = self._get_rew(x, y, terminated)
+
+        info = reward_info
+
+        if self.render_mode == "human":
+            self.render()
 
         if self.mode == "stable":
             pass
         elif self.mode == "test":
-            # 尝试暂时取消掉边界条件限制，不然会直接结束，不利于获取奖励
-            # x = obs[0]
-            # terminated = bool(np.abs(x) >= 3.95)
             terminated = False
-            # print(obs[0])
 
-        return obs, reward, terminated, truncated, info
+        # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
+        return observation, reward, terminated, False, info
 
 
 class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
@@ -101,43 +80,24 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         super().__init__(xml_file=RDIP_XML_DIR, *args, **kwargs)
 
         self.mode = mode
-        self.external_force = 0.0
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
         if not self.logger.hasHandlers():
             handler = logging.StreamHandler()
             handler.setFormatter(
-                logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+                logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
             )
             self.logger.addHandler(handler)
         self.logger.info(
             f"Custom Rotary Inverted Double Pendulum Env initialized with mode: {mode}"
         )
 
-    def _get_body_id_by_name(self, name):
-        model = self.model
-        if hasattr(model, "body_name2id"):
-            return model.body_name2id(name)
-        else:
-            for i in range(model.nbody):
-                if hasattr(model, "body"):
-                    body_name = model.body(i).name
-                else:
-                    body_name = model.names[
-                        model.name_bodyadr[i] : model.name_bodyadr[i + 1]
-                    ]
-                if isinstance(body_name, bytes):
-                    body_name = body_name.decode()
-                if body_name == name:
-                    return i
-            raise ValueError(f"Body name {name} not found")
-
     def reset_model(self):
         if self.mode == "test":
-            self.init_qpos = np.array([0.0, np.pi, 0])
+            self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            pass
+            self.init_qpos = np.array([0.0, 0.0, 0.0])
         elif self.mode == "none":
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
@@ -157,19 +117,33 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return self._get_obs()
 
     def step(self, action):
-        if (
-            hasattr(self, "sim")
-            and self.sim is not None
-            and hasattr(self, "cart_body_id")
-        ):
-            self.sim.data.xfrc_applied[:] = 0.0
-            self.sim.data.xfrc_applied[self.cart_body_id][0] = self.external_force
-        obs, reward, terminated, truncated, info = super().step(action)
+        self.do_simulation(action, self.frame_skip)
 
-        # 尝试暂时取消掉边界条件限制，不然会直接结束，不利于获取奖励
-        # x = obs[0]
-        # terminated = bool(np.abs(x) >= 3.95)
-        terminated = False
-        # print(obs[0])
+        x, _, y = self.data.site_xpos[4]
+        observation = self._get_obs()
+        terminated = bool(y <= 0.45)
+        reward, reward_info = self._get_rew(x, y, terminated)
 
-        return obs, reward, terminated, truncated, info
+        info = reward_info
+
+        if self.render_mode == "human":
+            self.render()
+        # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
+        return observation, reward, terminated, False, info
+
+    def _get_rew(self, x, y, terminated):
+        v0, v1, v2 = self.data.qvel
+        theta = self.data.qpos[0]
+        dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
+        vel_penalty = 1e-4 * v0 + 1e-3 * v1**2 + 5e-3 * v2**2
+        alive_bonus = self._healthy_reward * int(not terminated)
+
+        reward = alive_bonus - dist_penalty - vel_penalty
+
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+        }
+
+        return reward, reward_info
