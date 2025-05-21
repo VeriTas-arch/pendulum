@@ -4,8 +4,8 @@ import gymnasium as gym
 import numpy as np
 import pygame
 
-from custom_wrapper import PerturbWrapper
 import utils
+from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO

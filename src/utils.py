@@ -55,5 +55,3 @@ def save_model(model, env_type, model_type, mode, extra=None):
         model.save(f"{DATA_DIR}/{model_type.lower()}_{model_name}_{mode}_{extra}.zip")
     else:
         model.save(f"{DATA_DIR}/{model_type.lower()}_{model_name}_{mode}.zip")
-
-
