@@ -7,9 +7,9 @@ from stable_baselines3 import PPO, SAC
 
 from custom_wrapper import PerturbWrapper
 
-ENV_TYPE = 1
+ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EXTRA = None  # 额外的后缀，不加则设为 None
@@ -62,6 +62,36 @@ elif ENV_TYPE == 1:
             )
         else:
             model = PPO.load(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
+
+elif ENV_TYPE == 2:
+    gym.register(
+        id="CustomRotaryInvertedDoublePendulum-v1",
+        entry_point="custom_envs:CustomRotaryInvertedDoublePendulumEnv",
+    )
+    env = PerturbWrapper(
+        gym.make(
+            "CustomRotaryInvertedDoublePendulum-v1", render_mode="human", mode=MODE
+        )
+    )
+    if MODEL_TYPE == "SAC":
+        if EXTRA is not None:
+            model = SAC.load(
+                f"{DATA_DIR}/sac_rotary_inverted_double_pendulum_{MODE}_{EXTRA}.zip",
+                env=env,
+            )
+        else:
+            model = SAC.load(
+                f"{DATA_DIR}/sac_rotary_inverted_double_pendulum_{MODE}.zip", env=env
+            )
+    elif MODEL_TYPE == "PPO":
+        if EXTRA is not None:
+            model = PPO.load(
+                f"{DATA_DIR}/ppo_rotary_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
+            )
+        else:
+            model = PPO.load(
+                f"{DATA_DIR}/ppo_rotary_inverted_double_pendulum_{MODE}.zip"
+            )
 
 
 obs, info = env.reset()

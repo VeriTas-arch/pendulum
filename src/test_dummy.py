@@ -4,7 +4,7 @@ from pathlib import Path
 import glfw
 import mujoco
 import mujoco.viewer
-import numpy as np
+import numpy as np  # noqa: F401
 
 # 加载模型
 MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
@@ -16,11 +16,11 @@ model = mujoco.MjModel.from_xml_path(XML_DIR)
 data = mujoco.MjData(model)
 
 # 初始姿态：轻微扰动
-data.qpos[:] = [0.0, np.pi, 0.0]
+data.qpos[:] = [0.0, 0.0, 0.0]
 
 # 控制参数
 STEP = 0.005
-IMPULSE_STEP = 0.5 / STEP * 0.05  # 施加冲量，计算方式为 最大扭矩 / 步长 * 比例系数
+IMPULSE_STEP = 5  # 施加冲量，计算方式为 最大扭矩 / 步长 * 比例系数
 
 impulse = 0.0
 
@@ -51,8 +51,18 @@ def control_callback(model, data):
 with mujoco.viewer.launch_passive(
     model, data, key_callback=keyboard_callback
 ) as viewer:
+
+    site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "flag")
+    tip_pos = data.site_xpos[site_id]
+    print("link2 末端位置：", tip_pos)
+
     while viewer.is_running():
         control_callback(model, data)
         mujoco.mj_step(model, data)
         viewer.sync()
+        # print(data.qvel)
+        # tip_pos = data.site_xpos[site_id]
+        # print("link2 末端位置：", tip_pos)
+        print(data.qpos[0])
+
         time.sleep(STEP)
