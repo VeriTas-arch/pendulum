@@ -25,7 +25,7 @@ class LoggingCallback(BaseCallback):
 
         super(LoggingCallback, self).__init__(verbose)
         self.log_interval = log_interval
-        self.model_name = model_name
+        self.model_name = model_name.lower()
         self.mode = mode
         self.env_type = env_type
         self.extra = extra

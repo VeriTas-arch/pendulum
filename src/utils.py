@@ -9,26 +9,26 @@ def load_model(env, env_type, model_type, mode, extra=None):
     if mode not in ["test", "stable"]:
         raise ValueError("Invalid mode. Choose 'test' or 'stable'.")
 
-    model_name = None
+    env_name = None
     if env_type == 0:
-        model_name = "pendulum"
+        env_name = "pendulum"
     elif env_type == 1:
-        model_name = "inverted_double_pendulum"
+        env_name = "inverted_double_pendulum"
     elif env_type == 2:
-        model_name = "rotary_inverted_double_pendulum"
+        env_name = "rotary_inverted_double_pendulum"
     else:
         raise ValueError("Invalid environment type. Choose 0, 1, or 2.")
 
     if model_type == "SAC":
         if extra is not None:
-            model = SAC.load(f"{DATA_DIR}/sac_{model_name}_{mode}_{extra}.zip", env=env)
+            model = SAC.load(f"{DATA_DIR}/sac_{env_name}_{mode}_{extra}.zip", env=env)
         else:
-            model = SAC.load(f"{DATA_DIR}/sac_{model_name}_{mode}.zip", env=env)
+            model = SAC.load(f"{DATA_DIR}/sac_{env_name}_{mode}.zip", env=env)
     elif model_type == "PPO":
         if extra is not None:
-            model = PPO.load(f"{DATA_DIR}/ppo_{model_name}_{mode}_{extra}.zip", env=env)
+            model = PPO.load(f"{DATA_DIR}/ppo_{env_name}_{mode}_{extra}.zip", env=env)
         else:
-            model = PPO.load(f"{DATA_DIR}/ppo_{model_name}_{mode}.zip", env=env)
+            model = PPO.load(f"{DATA_DIR}/ppo_{env_name}_{mode}.zip", env=env)
     else:
         raise ValueError("Invalid model type. Choose 'SAC' or 'PPO'.")
 
@@ -55,3 +55,5 @@ def save_model(model, env_type, model_type, mode, extra=None):
         model.save(f"{DATA_DIR}/{model_type.lower()}_{model_name}_{mode}_{extra}.zip")
     else:
         model.save(f"{DATA_DIR}/{model_type.lower()}_{model_name}_{mode}.zip")
+
+

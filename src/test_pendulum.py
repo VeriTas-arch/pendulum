@@ -3,9 +3,9 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 import pygame
-from stable_baselines3 import PPO, SAC
 
 from custom_wrapper import PerturbWrapper
+import utils
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
@@ -48,20 +48,7 @@ elif ENV_TYPE == 1:
     env = PerturbWrapper(
         gym.make("CustomInvertedDoublePendulum-v1", render_mode="human", mode=MODE)
     )
-    if MODEL_TYPE == "SAC":
-        if EXTRA is not None:
-            model = SAC.load(
-                f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
-            )
-        else:
-            model = SAC.load(f"{DATA_DIR}/sac_inverted_double_pendulum_{MODE}.zip")
-    elif MODEL_TYPE == "PPO":
-        if EXTRA is not None:
-            model = PPO.load(
-                f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
-            )
-        else:
-            model = PPO.load(f"{DATA_DIR}/ppo_inverted_double_pendulum_{MODE}.zip")
+    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
 
 elif ENV_TYPE == 2:
     gym.register(
@@ -73,25 +60,7 @@ elif ENV_TYPE == 2:
             "CustomRotaryInvertedDoublePendulum-v1", render_mode="human", mode=MODE
         )
     )
-    if MODEL_TYPE == "SAC":
-        if EXTRA is not None:
-            model = SAC.load(
-                f"{DATA_DIR}/sac_rotary_inverted_double_pendulum_{MODE}_{EXTRA}.zip",
-                env=env,
-            )
-        else:
-            model = SAC.load(
-                f"{DATA_DIR}/sac_rotary_inverted_double_pendulum_{MODE}.zip", env=env
-            )
-    elif MODEL_TYPE == "PPO":
-        if EXTRA is not None:
-            model = PPO.load(
-                f"{DATA_DIR}/ppo_rotary_inverted_double_pendulum_{MODE}_{EXTRA}.zip"
-            )
-        else:
-            model = PPO.load(
-                f"{DATA_DIR}/ppo_rotary_inverted_double_pendulum_{MODE}.zip"
-            )
+    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
 
 
 obs, info = env.reset()
