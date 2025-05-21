@@ -5,13 +5,14 @@ from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.env_util import make_vec_env
 
 from custom_callback import LoggingCallback
+import utils
 
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
+MODE = "test"  # test for swing up, stable for stable control
+LOAD_MODEL = False  # 是否加载模型
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-EXTRA = None  # 额外的后缀，不加则设为 None
+EXTRA = "test_train"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -24,14 +25,9 @@ if ENV_TYPE == 0:
         raise ValueError("Pendulum-v1 is only tested for SAC. ")
 
     if LOAD_MODEL:
-        try:
-            if EXTRA is not None:
-                model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}_{EXTRA}.zip", env=env)
-            else:
-                model = SAC.load(f"{DATA_DIR}/sac_pendulum_{MODE}.zip", env=env)
-        except FileNotFoundError:
-            print("Model not found. Training a new model.")
-            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
+        model = utils.load_model(
+            env=env, env_type=ENV_TYPE, model_type=MODEL_TYPE, mode=MODE, extra=EXTRA
+        )
     else:
         model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-3)
 

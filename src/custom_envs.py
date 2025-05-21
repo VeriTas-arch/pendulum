@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -11,7 +10,7 @@ RDIP_XML_DIR = f"{ASSET_DIR}/rotary_inverted_double_pendulum.xml"
 
 
 class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
-    def __init__(self, mode="none", *args, **kwargs):
+    def __init__(self, mode=None, *args, **kwargs):
         super().__init__(xml_file=DIP_XML_DIR, *args, **kwargs)
 
         self.mode = mode
@@ -36,7 +35,7 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             self.init_qpos = np.array([0.0, np.pi, 0])
         elif self.mode == "stable":
             self.init_qpos = np.array([0.0, 0.0, 0])
-        elif self.mode == "none":
+        else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
             )
@@ -77,7 +76,7 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
 
 class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
-    def __init__(self, mode="none", *args, **kwargs):
+    def __init__(self, mode=None, *args, **kwargs):
         super().__init__(xml_file=RDIP_XML_DIR, *args, **kwargs)
 
         self.mode = mode
@@ -99,7 +98,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
             self.init_qpos = np.array([0.0, 0.0, 0.0])
-        elif self.mode == "none":
+        else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
             )
@@ -130,12 +129,18 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if self.render_mode == "human":
             self.render()
         # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
+
+        if self.mode == "stable":
+            pass
+        elif self.mode == "test":
+            terminated = False
+
         return observation, reward, terminated, False, info
 
     def _get_rew(self, x, y, terminated):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
-        dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
+        dist_penalty = 0.01 * (x - 0.2159) ** 2 + y**2 + 0.02 * abs(theta)
         vel_penalty = 1e-4 * v0 + 1e-3 * v1**2 + 5e-3 * v2**2
         alive_bonus = self._healthy_reward * int(not terminated)
 
