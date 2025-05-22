@@ -20,19 +20,19 @@ data.qpos[:] = [0.0, 0.0, 0.0]
 
 # 控制参数
 STEP = 0.005
-IMPULSE_STEP = 5  # 施加冲量，计算方式为 最大扭矩 / 步长 * 比例系数
+TOQUE_STEP = 5  # 施加力矩，计算方式为 最大扭矩 / 步长 * 比例系数
 
-impulse = 0.0
+torque = 0.0
 
 
 def keyboard_callback(key):
-    global impulse
+    global torque
     if key == glfw.KEY_LEFT:
-        impulse = IMPULSE_STEP
-        print(f"Impulse applied: {impulse}")
+        torque = TOQUE_STEP
+        print(f"Impulse applied: {torque}")
     elif key == glfw.KEY_RIGHT:
-        impulse = -IMPULSE_STEP
-        print(f"Impulse applied: {impulse}")
+        torque = -TOQUE_STEP
+        print(f"Impulse applied: {torque}")
     elif key == glfw.KEY_ESCAPE:
         # 退出程序
         print("Exiting...")
@@ -40,11 +40,11 @@ def keyboard_callback(key):
 
 
 def control_callback(model, data):
-    global impulse
+    global torque
     # 只在当前帧施加冲量
-    data.qfrc_applied[0] = impulse
+    data.ctrl[0] = torque
     # 施加后立即清零
-    impulse = 0.0
+    torque = 0.0
 
 
 # 启动 Viewer（被动模式）
@@ -54,15 +54,15 @@ with mujoco.viewer.launch_passive(
 
     site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "flag")
     tip_pos = data.site_xpos[site_id]
-    print("link2 末端位置：", tip_pos)
+    # print("link2 末端位置：", tip_pos)
 
     while viewer.is_running():
         control_callback(model, data)
         mujoco.mj_step(model, data)
         viewer.sync()
-        # print(data.qvel)
+        print(data.qvel)
         # tip_pos = data.site_xpos[site_id]
         # print("link2 末端位置：", tip_pos)
-        print(data.qpos[0])
+        # print(data.qpos[0])
 
         time.sleep(STEP)
