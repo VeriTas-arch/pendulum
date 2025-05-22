@@ -7,9 +7,9 @@ import pygame
 import utils
 from custom_wrapper import PerturbWrapper
 
-ENV_TYPE = 2
+ENV_TYPE = 3
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
+MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EXTRA = "train_test_1"  # 额外的后缀，不加则设为 None
@@ -62,6 +62,20 @@ elif ENV_TYPE == 2:
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
 
+elif ENV_TYPE == 3:
+    gym.register(
+        id="CustomRotaryInvertedPendulum-v1",
+        entry_point="custom_envs:CustomRotaryInvertedPendulumEnv",
+    )
+    env = PerturbWrapper(
+        gym.make("CustomRotaryInvertedPendulum-v1", render_mode="human", mode=MODE)
+    )
+    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
+
+else:
+    raise NotImplementedError(
+        f"ENV_TYPE {ENV_TYPE} is not supported. Please check the code."
+    )
 
 obs, info = env.reset()
 clock = pygame.time.Clock()

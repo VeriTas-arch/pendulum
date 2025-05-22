@@ -7,7 +7,7 @@ import mujoco.viewer
 import numpy as np  # noqa: F401
 
 # 加载模型
-MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
+MODEL_NAME = "rotary_inverted_pendulum"  # "rotary_inverted_double_pendulum"
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 XML_DIR = f"{ASSET_DIR}/{MODEL_NAME}.xml"
@@ -16,7 +16,7 @@ model = mujoco.MjModel.from_xml_path(XML_DIR)
 data = mujoco.MjData(model)
 
 # 初始姿态：轻微扰动
-data.qpos[:] = [0.0, 0.0, 0.0]
+data.qpos[:] = [0.0, 0.0]
 
 # 控制参数
 STEP = 0.005
@@ -49,26 +49,23 @@ def control_callback(model, data):
 
 def compute_reward(model, data):
     # 目标末端位置
-    _healthy_reward = 10
+    x, _, y = data.site_xpos[4]
     target_pos = np.array([0, 0, 0.5365])
     theta = data.qpos[0]
-    phi1 = data.qpos[1]
-    phi2 = data.qpos[2]
-    v0, v1, v2 = data.qvel
-    x, _, y = data.site_xpos[4]
-    terminated = bool(y <= 0.45)
+    v0, v1 = data.qvel
+    _healthy_reward = 0
 
-    posture_reward = np.cos(np.pi - phi1) + np.cos(phi2)
+    posture_reward = 0
+    if y > 0.3:
+        posture_reward = 3 * y
+
     ctrl_penalty = np.sum(data.ctrl[0] ** 2)
 
-    alive_bonus = _healthy_reward * int(not terminated)
-    dist_penalty = (
-        1e-2 * (x - 0.2159) ** 2 + (y - target_pos[2]) ** 2 + 0.2 * abs(theta)
-    )
-    vel_penalty = (7 * v0**2 + 1 * v1**2 + 5 * v2**2) * 7e-2 + 7e-1 * ctrl_penalty
-    alive_bonus = _healthy_reward * int(not terminated) + 5 * posture_reward * 5e-1
+    alive_bonus = _healthy_reward - 10 * (y - target_pos[2]) ** 2
+    dist_penalty = 1e-2 * (x - 0.2159) ** 2 + 1e-2 * abs(theta)
+    vel_penalty = (7 * v0**2 + 1 * v1**2) * 7e-3 + 7e-2 * ctrl_penalty
 
-    reward = alive_bonus - dist_penalty - vel_penalty
+    reward = alive_bonus - dist_penalty - vel_penalty + posture_reward
     reward_info = {
         "reward_survive": alive_bonus,
         "distance_penalty": -dist_penalty,
@@ -95,10 +92,11 @@ with mujoco.viewer.launch_passive(
         # tip_pos = data.site_xpos[site_id]
         # print("link2 末端位置：", tip_pos)
         # print(data.qpos)
-        x, _, y = data.site_xpos[4]
-        print("x:", x, "y:", y)
+        # x, _, y = data.site_xpos[4]
+        # print("x:", x, "y:", y)
 
-        # reward, _ = compute_reward(model, data)
-        # print("reward:", reward)
+        reward, reward_info = compute_reward(model, data)
+        print("reward:", reward)
+        # print(reward_info)
 
         time.sleep(STEP)
