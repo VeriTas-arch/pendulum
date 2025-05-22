@@ -2,6 +2,8 @@ from pathlib import Path
 
 from stable_baselines3.common.callbacks import BaseCallback
 
+import utils
+
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
 
 
@@ -25,7 +27,7 @@ class LoggingCallback(BaseCallback):
 
         super(LoggingCallback, self).__init__(verbose)
         self.log_interval = log_interval
-        self.model_name = model_name.lower()
+        self.model_name = model_name
         self.mode = mode
         self.env_type = env_type
         self.extra = extra
@@ -34,32 +36,8 @@ class LoggingCallback(BaseCallback):
         if self.num_timesteps % self.log_interval == 0:
             print(f"Step: {self.num_timesteps}, Reward: {self.locals['rewards']}")
 
-            if self.env_type == 0:
-                if self.extra is not None:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_pendulum_{self.mode}_{self.extra}.zip"
-                    )
-                else:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_pendulum_{self.mode}.zip"
-                    )
-            elif self.env_type == 1:
-                if self.extra is not None:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_inverted_double_pendulum_{self.mode}_{self.extra}.zip"
-                    )
-                else:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_inverted_double_pendulum_{self.mode}.zip"
-                    )
-            elif self.env_type == 2:
-                if self.extra is not None:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_rotary_inverted_double_pendulum_{self.mode}_{self.extra}.zip"
-                    )
-                else:
-                    self.model.save(
-                        f"{DATA_DIR}/{self.model_name}_rotary_inverted_double_pendulum_{self.mode}.zip"
-                    )
+            utils.save_model(
+                self.model, self.env_type, self.model_name, self.mode, self.extra
+            )
 
         return True

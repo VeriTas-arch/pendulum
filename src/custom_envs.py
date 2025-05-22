@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -141,9 +140,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
     def _get_rew(self, x, y, terminated):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
-        dist_penalty = 0.01 * (x - 0.2159) ** 2 + y**2 + 0.02 * abs(theta)
-        vel_penalty = 1e-4 * v0 + 1e-3 * v1**2 + 5e-3 * v2**2
-        alive_bonus = self._healthy_reward * int(not terminated)
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2 + (y - 0.6) ** 2 + 0.2 * abs(theta)
+        vel_penalty = (1e-3 * v0 + 1e-2 * v1**2 + 5e-2 * v2**2) * 3
+        alive_bonus = (self._healthy_reward + y) * int(not terminated)
 
         reward = alive_bonus - dist_penalty - vel_penalty
 
