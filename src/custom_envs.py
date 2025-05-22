@@ -2,8 +2,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -121,9 +120,16 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         self.do_simulation(action, self.frame_skip)
 
         x, _, y = self.data.site_xpos[4]
+        v0, v1, v2 = self.data.qvel
         observation = self._get_obs()
-        terminated = bool(y <= 0.45)
+
+        if self.mode == "stable":
+            terminated = bool(y <= 0.45)
+        elif self.mode == "test":
+            terminated = False
+
         reward, reward_info = self._get_rew(x, y, terminated)
+        # reward, reward_info = self.compute_reward(x, y, terminated)
 
         info = reward_info
 
@@ -131,22 +137,46 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             self.render()
         # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
 
-        if self.mode == "stable":
-            pass
-        elif self.mode == "test":
-            terminated = False
-
         return observation, reward, terminated, False, info
 
     def _get_rew(self, x, y, terminated):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2 + (y - 0.6) ** 2 + 0.2 * abs(theta)
-        vel_penalty = (1e-3 * v0 + 1e-2 * v1**2 + 5e-2 * v2**2) * 3
-        alive_bonus = (self._healthy_reward + y) * int(not terminated)
+        dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
+        vel_penalty = 1e-4 * v0 + 1e-3 * v1**2 + 5e-3 * v2**2
+        alive_bonus = self._healthy_reward * int(not terminated)
 
         reward = alive_bonus - dist_penalty - vel_penalty
 
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+        }
+
+        return reward, reward_info
+
+    def compute_reward(self, x, y, terminated):
+        # 目标末端位置
+        target_pos = np.array([0, 0, 0.5365])
+        theta = self.data.qpos[0]
+        phi1 = self.data.qpos[1]
+        phi2 = self.data.qpos[2]
+        v0, v1, v2 = self.data.qvel
+
+        posture_reward = np.cos(np.pi - phi1) + np.cos(phi2)
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+
+        alive_bonus = self._healthy_reward * int(not terminated)
+        dist_penalty = (
+            1e-2 * (x - 0.2159) ** 2 + (y - target_pos[2]) ** 2 + 0.2 * abs(theta)
+        )
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 5 * v2**2) * 7e-3 + 7e-2 * ctrl_penalty
+        alive_bonus = (
+            self._healthy_reward * int(not terminated) + 5 * posture_reward * 5e-1
+        )
+
+        reward = alive_bonus - dist_penalty - vel_penalty
         reward_info = {
             "reward_survive": alive_bonus,
             "distance_penalty": -dist_penalty,
