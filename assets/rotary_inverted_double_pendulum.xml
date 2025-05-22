@@ -1,6 +1,6 @@
 <mujoco model="rotary_double_pendulum">
     <compiler angle="radian" coordinate="local" />
-    <option timestep="0.005" gravity="0 0 -9.81" integrator="RK4" />
+    <option timestep="0.004" gravity="0 0 -9.81" integrator="RK4" />
 
     <default>
         <joint limited="true" damping="0.0024" />
@@ -38,7 +38,7 @@
                     <body name="link2" pos="0 0 0.2">
                         <joint name="hinge2" type="hinge" axis="1 0 0" limited="false" />
                         <!-- <joint name="hinge2" type="hinge" axis="1 0 0" limited="true"
-                            range="-0.5236 0.5236" /> -->
+                            range="-0.7 0.7" /> -->
                         <!-- <inertial pos="0 0 0.16825" mass="0.127" diaginertia="0.001 0.001 0.001" /> -->
 
                         <!-- From joint upward -->

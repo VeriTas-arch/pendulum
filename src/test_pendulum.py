@@ -9,10 +9,10 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "test_train"  # 额外的后缀，不加则设为 None
+EXTRA = "train_test_1"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
