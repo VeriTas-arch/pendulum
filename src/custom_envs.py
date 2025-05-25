@@ -3,8 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -163,20 +162,28 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         target_pos = np.array([0, 0, 0.5365])
         # theta = self.data.qpos[0]
         v0, v1, v2 = self.data.qvel
+        # move the reward to above 0
+        shift = 7
 
         posture_reward = 0
         ctrl_penalty = 0
+        vel_penalty = 0
+
         if y > 0.3:
             posture_reward = 5 * y
             ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
-        alive_bonus = posture_reward - 10 * (y - target_pos[2]) ** 2
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2
         vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
             0.5365 + y
         ) + 7e-2 * ctrl_penalty
 
-        reward = alive_bonus - dist_penalty - vel_penalty
+        if y > 0.5:
+            vel_penalty = (v0**2 + v1**2 + v2**2) * 7e-2
+
+        alive_bonus = posture_reward - 10 * (y - target_pos[2]) ** 2
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+
+        reward = alive_bonus - dist_penalty - vel_penalty + shift
         reward_info = {
             "reward_survive": alive_bonus,
             "distance_penalty": -dist_penalty,
