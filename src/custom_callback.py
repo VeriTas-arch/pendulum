@@ -42,7 +42,7 @@ class LoggingCallback(BaseCallback):
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.log_interval == 0:
-            # print(f"Step: {self.num_timesteps}, Reward: {self.locals['rewards']}")
+            print(f"Step: {self.num_timesteps}, Reward: {self.locals['rewards']}")
 
             utils.save_model(
                 self.model, self.env_type, self.model_name, self.mode, self.extra
