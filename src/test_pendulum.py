@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 
 import gymnasium as gym
@@ -62,7 +61,7 @@ elif ENV_TYPE == 2:
         )
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-    stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_2")
+    stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
 
 elif ENV_TYPE == 3:
     gym.register(
@@ -83,7 +82,7 @@ obs, info = env.reset()
 clock = pygame.time.Clock()
 perturbation = np.zeros(env.action_space.shape)
 
-
+maxy = 0
 done = False
 while not done:
     for event in pygame.event.get():
@@ -105,26 +104,22 @@ while not done:
     # 模型预测 + 应用扰动
     _, _, y = env.unwrapped.data.site_xpos[4]
 
-    alpha = np.clip((y - 0.5) / (0.52 - 0.5), 0.0, 1.0)
+    # alpha = np.clip((y - 0.48) / (0.52 - 0.48), 0.0, 1.0)
 
-    action_swingup = model.predict(obs, deterministic=True)[0]
-    action_stable = stable_model.predict(obs, deterministic=True)[0]
+    # action_swingup = model.predict(obs, deterministic=True)[0]
+    # action_stable = stable_model.predict(obs, deterministic=True)[0]
 
-    # if y > 0.525:
-    #     action, _ = stable_model.predict(obs, deterministic=True)
-    # else:
-    #     action, _ = model.predict(obs, deterministic=True)
+    # action = (1 - alpha) * action_swingup + alpha * action_stable
 
-    action = (1 - alpha) * action_swingup + alpha * action_stable
-
-    # action, _ = model.predict(obs, deterministic=True)
+    action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
 
-    # if y > 0.525:
-    #     print("y:", y)
-    #     v0, v1, v2 = env.unwrapped.data.qvel
-    #     print("v0:", v0, "v1:", v1, "v2:", v2)
-    #     time.sleep(100)
+    if y > 0.525:
+        if y > maxy:
+            maxy = y
+        print("maxy:", maxy)
+        v0, v1, v2 = env.unwrapped.data.qvel
+        print("v0:", v0, "v1:", v1, "v2:", v2)
 
     env.render()
     screen.fill((255, 255, 255))
