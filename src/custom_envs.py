@@ -5,8 +5,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -226,9 +225,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if y > 0.5:
             vel_penalty += (v2**2) * 0.1 + (v1**2) * 0.2
 
-        alive_bonus = (posture_reward - 10 * (y - target_pos[2]) ** 2) * int(
-            not terminated
-        )
+        alive_bonus = (posture_reward + 5) * int(not terminated)
         dist_penalty = 1e-2 * (x - 0.2159) ** 2
 
         # 新增奖励：靠近最高点时速度小
