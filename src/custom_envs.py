@@ -141,8 +141,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         elif self.mode == "test":
             terminated = False
 
-        # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test(x, y, terminated)
+        reward, reward_info = self._get_rew(x, y, terminated)
+        # reward, reward_info = self.compute_reward_test(x, y, terminated)
 
         info = reward_info
 
@@ -189,7 +189,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
         dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
-        vel_penalty = 1e-4 * v0 + 1e-3 * v1**2 + 5e-3 * v2**2
+        vel_penalty = 1e-4 * v0 + 2e-3 * v1**2 + 5e-3 * v2**2
         alive_bonus = self._healthy_reward * int(not terminated)
 
         reward = alive_bonus - dist_penalty - vel_penalty
