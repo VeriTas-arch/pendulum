@@ -208,6 +208,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         posture_reward = 0
         vel_penalty = 0
         swing_reward = 0
+        alive_bonus = 0
 
         ctrl_penalty = np.sum(self.data.ctrl[0] ** 2) * 0.5
 
@@ -225,8 +226,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         if y > 0.5:
             vel_penalty += (v2**2) * 0.1 + (v1**2) * 0.2
+            alive_bonus = (posture_reward + 5) * int(not terminated)
 
-        alive_bonus = (posture_reward + 5) * int(not terminated)
         dist_penalty = 1e-2 * (x - 0.2159) ** 2
 
         # 新增奖励：靠近最高点时速度小
