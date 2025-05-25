@@ -108,7 +108,7 @@ elif ENV_TYPE == 2:
     )
     env = make_vec_env(
         "CustomRotaryInvertedDoublePendulum-v1",
-        n_envs=8,
+        n_envs=16,
         wrapper_class=gym.wrappers.TimeLimit,
         wrapper_kwargs={"max_episode_steps": 1000},
         env_kwargs={
@@ -124,7 +124,7 @@ elif ENV_TYPE == 2:
             model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, ent_coef=0.5)
 
         model.learn(
-            total_timesteps=1e7,
+            total_timesteps=1e6,
             callback=LoggingCallback(
                 log_interval=2000,
                 model_name="SAC",
