@@ -128,10 +128,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return self._get_obs()
 
     def step(self, action):
-        noise = np.random.normal(0, 0.0001, size=np.shape(action))
-        perturbed_action = action + noise
+        # noise = np.random.normal(0, 0.0001, size=np.shape(action))
+        # action = action + noise
 
-        self.do_simulation(perturbed_action, self.frame_skip)
+        self.do_simulation(action, self.frame_skip)
 
         x, _, y = self.data.site_xpos[4]
         observation = self._get_obs()
