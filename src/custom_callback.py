@@ -35,7 +35,9 @@ class LoggingCallback(BaseCallback):
         self.mode = mode
         self.env_type = env_type
         self.extra = extra
-        self.csv_path = str(CSV_DIR / f"{model_name}_{mode}_{extra}_{time.strftime("%H%M%S")}.csv")
+
+        current_time = time.strftime("%Y%m%d_%H%M%S")
+        self.csv_path = CSV_DIR / f"{model_name}_{mode}_{extra}_{current_time}.csv"
         self.header_written = False
 
     def _on_step(self) -> bool:
@@ -47,7 +49,7 @@ class LoggingCallback(BaseCallback):
             )
 
             # 获取当前日志字典
-            log_dict = self.logger.get_log_dict()
+            log_dict = {k: v for k, v in self.logger.name_to_value.items() if isinstance(v, (int, float))}
             if log_dict:
                 write_header = (
                     not os.path.exists(self.csv_path) or not self.header_written
