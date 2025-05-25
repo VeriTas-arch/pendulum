@@ -7,7 +7,7 @@ import mujoco.viewer
 import numpy as np  # noqa: F401
 
 # 加载模型
-MODEL_NAME = "rotary_inverted_pendulum"  # "rotary_inverted_double_pendulum"
+MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 XML_DIR = f"{ASSET_DIR}/{MODEL_NAME}.xml"
@@ -16,7 +16,7 @@ model = mujoco.MjModel.from_xml_path(XML_DIR)
 data = mujoco.MjData(model)
 
 # 初始姿态：轻微扰动
-data.qpos[:] = [0.0, 0.0]
+data.qpos[:] = [0.0, np.pi, 0.0]
 
 # 控制参数
 STEP = 0.005
@@ -91,12 +91,12 @@ with mujoco.viewer.launch_passive(
         # print(data.qvel)
         # tip_pos = data.site_xpos[site_id]
         # print("link2 末端位置：", tip_pos)
-        # print(data.qpos)
+        print(data.qpos)
         # x, _, y = data.site_xpos[4]
         # print("x:", x, "y:", y)
 
-        reward, reward_info = compute_reward(model, data)
-        print("reward:", reward)
+        # reward, reward_info = compute_reward(model, data)
+        # print("reward:", reward)
         # print(reward_info)
 
         time.sleep(STEP)

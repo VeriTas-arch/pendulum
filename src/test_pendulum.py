@@ -7,7 +7,7 @@ import pygame
 import utils
 from custom_wrapper import PerturbWrapper
 
-ENV_TYPE = 3
+ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
