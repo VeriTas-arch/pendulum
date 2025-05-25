@@ -12,7 +12,7 @@ MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "train_test_4"  # 额外的后缀，不加则设为 None
+EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -61,7 +61,7 @@ elif ENV_TYPE == 2:
         )
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-    stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
+    # stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
 
 elif ENV_TYPE == 3:
     gym.register(
@@ -102,7 +102,7 @@ while not done:
     env.set_perturbation(perturbation)
 
     # 模型预测 + 应用扰动
-    _, _, y = env.unwrapped.data.site_xpos[4]
+    # _, _, y = env.unwrapped.data.site_xpos[4]
 
     # alpha = np.clip((y - 0.45) / (0.55 - 0.45), 0.0, 1.0)
 
@@ -113,6 +113,8 @@ while not done:
 
     action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
+
+    # print("action:", action)
 
     # if y > 0.5:
     #     if y > maxy:

@@ -5,8 +5,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -98,7 +97,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             f"Custom Rotary Inverted Double Pendulum Env initialized with mode: {mode}"
         )
 
-        high = np.inf * np.ones(11, dtype=np.float32)
+        high = np.inf * np.ones(9, dtype=np.float32)
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
     def reset_model(self):
@@ -107,10 +106,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            # self.init_qpos = np.array([0.0, 0.0, 0.0])
-            self.init_qpos = np.array([0.0, sign * angle_offset, 0])
-            amp = 1.0
-            self.init_qvel = np.array([0.0, sign * 0.3 * amp, sign * 0.5 * amp])
+            self.init_qpos = np.array([0.0, 0.0, 0.0])
+            # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
+            # amp = 1.0
+            # self.init_qvel = np.array([0.0, sign * 0.3 * amp, sign * 0.5 * amp])
         else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
@@ -137,7 +136,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.3)
+            terminated = bool(y <= 0.4)
         elif self.mode == "test":
             terminated = False
 
@@ -164,14 +163,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         dtheta1 = qvel[1]
         dtheta2 = qvel[2]
 
-        # 获取末端位置
-        tip_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "flag")
-        tip_pos = self.data.site_xpos[tip_site_id]
-        tip_pos_z = tip_pos[2]
-
-        # 可选：角动量和（估计旋转趋势）
-        angular_momentum_sum = dtheta_base + dtheta1 + dtheta2
-
         obs = np.array(
             [
                 np.cos(theta_base),
@@ -183,8 +174,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
                 dtheta_base,
                 dtheta1,
                 dtheta2,
-                tip_pos_z,
-                angular_momentum_sum,
             ],
             dtype=np.float32,
         )
@@ -219,18 +208,18 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         vel_penalty = 0
         swing_reward = 0
 
-        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2) * 0.5
 
         if y < -0.3:
             angular_momentum = abs(v1) + abs(v2)
             swing_reward = 0.5 * angular_momentum - 0.1 * ctrl_penalty
 
         if y > 0.3:
-            posture_reward = 2 - 5 * abs(0.5365 - y) - abs(theta1 - theta2) * 0.5
-            ctrl_penalty *= 2
+            posture_reward = 2 - 3 * abs(0.5365 - y) - abs(theta1 - theta2) * 0.5
+            ctrl_penalty *= 1.2
 
         vel_penalty = (7 * v0**2 + 3 * v1**2 + 3 * v2**2) * 7e-3 * (
-            0.5365 + y
+            0.6 + y
         ) + 7e-2 * ctrl_penalty
 
         if y > 0.5:
@@ -244,7 +233,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # 新增奖励：靠近最高点时速度小
         peak_slow_bonus = 0
         if y > 0.5 and abs(v2) < 0.6 and abs(v1) < 0.6:
-            peak_slow_bonus = 5 * (1.2 - abs(v2) - abs(v1))  # 奖励速度低
+            peak_slow_bonus = 2 * (1.2 - abs(v2) - abs(v1))  # 奖励速度低
 
         reward = (
             alive_bonus
@@ -259,62 +248,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             "distance_penalty": -dist_penalty,
             "velocity_penalty": -vel_penalty,
             "peak_slow_bonus": peak_slow_bonus,
-        }
-
-        return reward, reward_info
-
-    def compute_reward_multi_stage(self, x, y, terminated):
-        target_pos = np.array([0, 0, 0.5365])
-        v0, v1, v2 = self.data.qvel
-        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
-
-        # 阶段划分阈值
-        swing_threshold = -0.3  # 小于此值为“蓄能阶段”
-        upright_threshold = 0.5  # 超过此值视为“成功起摆”
-
-        # -----------------------------
-        # 阶段 1：鼓励振荡（角速度 + 能量）
-        # -----------------------------
-        swing_reward = 0
-        if y < swing_threshold:
-            angular_momentum = abs(v1) + abs(v2)
-            swing_reward = 0.5 * angular_momentum - 0.1 * ctrl_penalty
-
-        # -----------------------------
-        # 阶段 2：鼓励竖直上摆 + 姿态奖励
-        # -----------------------------
-        upright_bonus = 0
-        posture_reward = 0
-        if y >= swing_threshold:
-            upright_bonus = -10 * (y - target_pos[2]) ** 2
-            if y > upright_threshold:
-                posture_reward = 5 * y  # 奖励越高越好
-
-        # -----------------------------
-        # 惩罚项：位置偏差、能量消耗
-        # -----------------------------
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2
-        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.5365 + y)
-        ctrl_penalty_term = 7e-2 * ctrl_penalty
-
-        # -----------------------------
-        # 最终奖励加权
-        # -----------------------------
-        reward = (
-            swing_reward
-            + upright_bonus
-            + posture_reward
-            - dist_penalty
-            - vel_penalty
-            - ctrl_penalty_term
-        )
-
-        reward_info = {
-            "reward_swing": swing_reward,
-            "reward_upright": upright_bonus,
-            "reward_posture": posture_reward,
-            "distance_penalty": -dist_penalty,
-            "velocity_penalty": -vel_penalty,
         }
 
         return reward, reward_info
