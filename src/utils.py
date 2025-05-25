@@ -35,10 +35,13 @@ def save_model(model, env_type, model_type, mode, extra=None):
 
     env_name = get_env_name(env_type)
 
+    save_path = ""
     if extra is not None:
-        model.save(f"{DATA_DIR}/{model_type.lower()}_{env_name}_{mode}_{extra}.zip")
+        save_path = DATA_DIR / f"{model_type.lower()}_{env_name}_{mode}_{extra}.zip"
     else:
-        model.save(f"{DATA_DIR}/{model_type.lower()}_{env_name}_{mode}.zip")
+        save_path = DATA_DIR / f"{model_type.lower()}_{env_name}_{mode}.zip"
+
+    model.save(str(save_path))
 
 
 def get_env_name(env_type):

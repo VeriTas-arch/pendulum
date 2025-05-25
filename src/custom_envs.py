@@ -2,11 +2,9 @@ import logging
 import random
 from pathlib import Path
 
-import mujoco
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -102,7 +100,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
     def reset_model(self):
-        angle_offset = np.pi / 15
+        angle_offset = np.pi / 36
         sign = random.choice([-1, 1])
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
@@ -130,19 +128,21 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return self._get_obs()
 
     def step(self, action):
-        self.do_simulation(action, self.frame_skip)
+        noise = np.random.normal(0, 0.01, size=np.shape(action))  # 均值0，标准差0.05
+        perturbed_action = action + noise
+
+        self.do_simulation(perturbed_action, self.frame_skip)
 
         x, _, y = self.data.site_xpos[4]
-        v0, v1, v2 = self.data.qvel
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.4)
+            terminated = bool(y <= 0.2)
         elif self.mode == "test":
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward(x, y, terminated)
+        reward, reward_info = self.compute_reward_test(x, y, terminated)
 
         info = reward_info
 
@@ -176,8 +176,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
                 dtheta1,
                 dtheta2,
             ],
-            dtype=np.float32,
+            dtype=np.float64,
         )
+
+        # 为观测添加高斯噪声（均值0，标准差0.02）
+        obs_noise = np.random.normal(0, 0.01, size=obs.shape).astype(np.float64)
+        obs = obs + obs_noise
 
         return obs
 
@@ -199,7 +203,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return reward, reward_info
 
     def compute_reward(self, x, y, terminated):
-        target_pos = np.array([0, 0, 0.5365])
         theta1, theta2 = self.data.qpos[1], self.data.qpos[2]
         v0, v1, v2 = self.data.qvel
         # move the reward to above 0
@@ -248,6 +251,95 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             "distance_penalty": -dist_penalty,
             "velocity_penalty": -vel_penalty,
             "peak_slow_bonus": peak_slow_bonus,
+        }
+
+        return reward, reward_info
+
+    def compute_reward_test(self, x, y, terminated):
+        # --- 获取状态变量 ---
+        theta0, theta1, theta2 = self.data.qpos
+        v0, v1, v2 = self.data.qvel
+        ctrl = (
+            self.data.ctrl[0]
+            if isinstance(self.data.ctrl, np.ndarray)
+            else self.data.ctrl
+        )
+        ctrl = np.array(ctrl)
+
+        # --- 常量与参数 ---
+        target_y = 0.5365
+        shift = -2.0
+
+        # --- 奖励组件初始化 ---
+        posture_reward = 0.0
+        swing_reward = 0.0
+        alive_bonus = 0.0
+        peak_slow_bonus = 0.0
+        action_smooth_penalty = 0.0
+        theta0_penalty = 0.0
+
+        # --- 控制惩罚 ---
+        ctrl_penalty = 0.02 * np.sum(ctrl**2)
+
+        # --- 摆动阶段奖励：鼓励产生角动量（当高度很低时） ---
+        if y < -0.3:
+            angular_momentum = abs(v1) + abs(v2)
+            swing_reward = 0.3 * angular_momentum - 0.1 * ctrl_penalty
+
+        # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
+        if y > 0.3:
+            height_bonus = np.exp(-8 * (y - target_y) ** 2) * 2.5
+            angle_bonus = np.exp(-3 * abs(theta1 - theta2)) * 1.0
+            posture_reward = height_bonus + angle_bonus
+            ctrl_penalty *= 1.05
+
+        # --- 顶端速度惩罚 ---
+        base_vel_penalty = 7 * v0**2 + 3 * v1**2 + 3 * v2**2
+        height_factor = 1 + 0.5 * np.tanh(5 * (y - 0.45))
+        vel_penalty = base_vel_penalty * 7e-3 * height_factor + 0.07 * ctrl_penalty
+
+        if y > 0.5:
+            vel_penalty += 0.1 * v2**2 + 0.2 * v1**2
+            alive_bonus = (posture_reward + 5.0) * int(not terminated)
+
+        # --- 额外：顶端速度尽量小 ---
+        if y > 0.5:
+            speed_sum = abs(v1) + abs(v2)
+            peak_slow_bonus = 2.0 * max(1.2 - speed_sum, 0.0)
+
+        # --- 额外：距离偏移惩罚（保持在轨道中央） ---
+        if y > 0.5 and not terminated:
+            theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
+
+        # --- 平滑动作惩罚 ---
+        if hasattr(self, "prev_action"):
+            delta_u = np.sum((self.prev_action - ctrl) ** 2)
+            action_smooth_penalty = 0.05 * delta_u
+        self.prev_action = np.copy(ctrl)
+
+        # --- 总奖励计算 ---
+        reward = (
+            alive_bonus
+            + swing_reward
+            + peak_slow_bonus
+            + posture_reward
+            - vel_penalty
+            - ctrl_penalty
+            - theta0_penalty
+            - action_smooth_penalty
+            + shift
+        )
+
+        # --- 可视化用信息 ---
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "posture_reward": posture_reward,
+            "velocity_penalty": -vel_penalty,
+            "ctrl_penalty": -ctrl_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
+            "swing_reward": swing_reward,
+            "theta0_penalty": -theta0_penalty,
+            "action_smooth_penalty": -action_smooth_penalty,
         }
 
         return reward, reward_info
