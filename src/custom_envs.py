@@ -142,7 +142,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward(x, y, terminated)
+        reward, reward_info = self.compute_reward_test(x, y, terminated)
 
         info = reward_info
 
@@ -176,11 +176,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
                 dtheta1,
                 dtheta2,
             ],
-            dtype=np.float64,
+            dtype=np.float32,
         )
 
         # 为观测添加高斯噪声（均值0，标准差0.02）
-        # obs_noise = np.random.normal(0, 0.01, size=obs.shape).astype(np.float64)
+        # obs_noise = np.random.normal(0, 0.01, size=obs.shape).astype(np.float32)
         # obs = obs + obs_noise
 
         return obs
@@ -202,7 +202,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         return reward, reward_info
 
-    def compute_reward(self, x, y, terminated):
+    def compute_reward_stable(self, x, y, terminated):
         theta1, theta2 = self.data.qpos[1], self.data.qpos[2]
         v0, v1, v2 = self.data.qvel
         # move the reward to above 0
