@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 import gymnasium as gym
@@ -6,7 +7,6 @@ import pygame
 
 import utils
 from custom_wrapper import PerturbWrapper
-import time
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
