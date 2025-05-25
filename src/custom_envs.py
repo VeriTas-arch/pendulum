@@ -231,7 +231,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             vel_penalty += (v2**2) * 0.1 + (v1**2) * 0.2
             alive_bonus = (posture_reward + 5) * int(not terminated)
 
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+        dist_penalty = 1e-1 * (x - 0.2159) ** 2
 
         # 新增奖励：靠近最高点时速度小
         peak_slow_bonus = 0
