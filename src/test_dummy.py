@@ -65,14 +65,16 @@ with mujoco.viewer.launch_passive(
         mujoco.mj_step(model, data)
         viewer.sync()
         # print(data.qvel)
-        # tip_pos = data.site_xpos[site_id]
+        tip_pos = data.site_xpos[site_id]
+        tip_linear_velocity = data.site_xvelp[site_id][:3]
+        tip_vel = np.linalg.norm(tip_linear_velocity)
+        print("link2 末端速度：", tip_vel)
         # print("link2 末端位置：", tip_pos)
-        # print(data.qpos)
         x, _, y = data.site_xpos[4]
         # print("x:", x, "y:", y)
 
         reward, reward_info = env.compute_reward(x, y, False)
-        print("reward:", reward)
+        # print("reward:", reward)
         # print(reward_info)
 
         time.sleep(STEP)

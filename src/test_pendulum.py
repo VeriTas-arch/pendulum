@@ -9,7 +9,7 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EXTRA = "train_test_3"  # 额外的后缀，不加则设为 None
@@ -104,7 +104,7 @@ while not done:
     # 模型预测 + 应用扰动
     _, _, y = env.unwrapped.data.site_xpos[4]
 
-    # alpha = np.clip((y - 0.48) / (0.52 - 0.48), 0.0, 1.0)
+    # alpha = np.clip((y - 0.45) / (0.55 - 0.45), 0.0, 1.0)
 
     # action_swingup = model.predict(obs, deterministic=True)[0]
     # action_stable = stable_model.predict(obs, deterministic=True)[0]
@@ -114,12 +114,12 @@ while not done:
     action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
 
-    if y > 0.525:
-        if y > maxy:
-            maxy = y
-        print("maxy:", maxy)
-        v0, v1, v2 = env.unwrapped.data.qvel
-        print("v0:", v0, "v1:", v1, "v2:", v2)
+    # if y > 0.5:
+    #     if y > maxy:
+    #         maxy = y
+    #     print("maxy:", maxy)
+    #     v0, v1, v2 = env.unwrapped.data.qvel
+    #     print("v0:", v0, "v1:", v1, "v2:", v2)
 
     env.render()
     screen.fill((255, 255, 255))
