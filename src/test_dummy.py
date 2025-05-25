@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+from custom_envs import CustomRotaryInvertedDoublePendulumEnv
 
 import glfw
 import mujoco
@@ -7,13 +8,15 @@ import mujoco.viewer
 import numpy as np  # noqa: F401
 
 # 加载模型
-MODEL_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
+XML_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
-XML_DIR = f"{ASSET_DIR}/{MODEL_NAME}.xml"
+XML_DIR = f"{ASSET_DIR}/{XML_NAME}.xml"
 
-model = mujoco.MjModel.from_xml_path(XML_DIR)
-data = mujoco.MjData(model)
+env = CustomRotaryInvertedDoublePendulumEnv(mode="test", custom_xml_file=XML_DIR)
+
+model = env.model
+data = env.data
 
 # 初始姿态：轻微扰动
 data.qpos[:] = [0.0, np.pi, 0.0]
@@ -47,34 +50,6 @@ def control_callback(model, data):
     torque = 0.0
 
 
-def compute_reward(model, data):
-    # 目标末端位置
-    x, _, y = data.site_xpos[4]
-    target_pos = np.array([0, 0, 0.5365])
-    theta = data.qpos[0]
-    v0, v1 = data.qvel
-    _healthy_reward = 0
-
-    posture_reward = 0
-    if y > 0.3:
-        posture_reward = 3 * y
-
-    ctrl_penalty = np.sum(data.ctrl[0] ** 2)
-
-    alive_bonus = _healthy_reward - 10 * (y - target_pos[2]) ** 2
-    dist_penalty = 1e-2 * (x - 0.2159) ** 2 + 1e-2 * abs(theta)
-    vel_penalty = (7 * v0**2 + 1 * v1**2) * 7e-3 + 7e-2 * ctrl_penalty
-
-    reward = alive_bonus - dist_penalty - vel_penalty + posture_reward
-    reward_info = {
-        "reward_survive": alive_bonus,
-        "distance_penalty": -dist_penalty,
-        "velocity_penalty": -vel_penalty,
-    }
-
-    return reward, reward_info
-
-
 # 启动 Viewer（被动模式）
 with mujoco.viewer.launch_passive(
     model, data, key_callback=keyboard_callback
@@ -93,10 +68,10 @@ with mujoco.viewer.launch_passive(
         # print("link2 末端位置：", tip_pos)
         # print(data.qpos)
         x, _, y = data.site_xpos[4]
-        print("x:", x, "y:", y)
+        # print("x:", x, "y:", y)
 
-        # reward, reward_info = compute_reward(model, data)
-        # print("reward:", reward)
+        reward, reward_info = env.compute_reward(x, y, False)
+        print("reward:", reward)
         # print(reward_info)
 
         time.sleep(STEP)

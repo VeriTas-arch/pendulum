@@ -3,8 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -13,8 +12,8 @@ RIP_XML_DIR = f"{ASSET_DIR}/rotary_inverted_pendulum.xml"
 
 
 class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
-    def __init__(self, mode=None, *args, **kwargs):
-        super().__init__(xml_file=DIP_XML_DIR, *args, **kwargs)
+    def __init__(self, mode=None, custom_xml_file=DIP_XML_DIR, *args, **kwargs):
+        super().__init__(xml_file=custom_xml_file, *args, **kwargs)
 
         self.mode = mode
 
@@ -79,8 +78,8 @@ class CustomInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
 
 class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
-    def __init__(self, mode=None, *args, **kwargs):
-        super().__init__(xml_file=RDIP_XML_DIR, *args, **kwargs)
+    def __init__(self, mode=None, custom_xml_file=RDIP_XML_DIR, *args, **kwargs):
+        super().__init__(xml_file=custom_xml_file, *args, **kwargs)
 
         self.mode = mode
 
@@ -243,8 +242,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
 
 class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
-    def __init__(self, mode=None, *args, **kwargs):
-        super().__init__(xml_file=RIP_XML_DIR, *args, **kwargs)
+    def __init__(self, mode=None, custom_xml_file=RIP_XML_DIR, *args, **kwargs):
+        super().__init__(xml_file=custom_xml_file, *args, **kwargs)
 
         self.mode = mode
         self.observation_space = spaces.Box(
