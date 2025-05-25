@@ -1,11 +1,11 @@
 import logging
 import random
 from pathlib import Path
+import mujoco
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -97,6 +97,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             f"Custom Rotary Inverted Double Pendulum Env initialized with mode: {mode}"
         )
 
+        high = np.inf * np.ones(11, dtype=np.float32)
+        self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
+
     def reset_model(self):
         angle_offset = np.pi / 15
         sign = random.choice([-1, 1])
@@ -148,6 +151,45 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         return observation, reward, terminated, False, info
 
+    def _get_obs(self):
+        qpos = self.data.qpos  # [theta_base, theta1, theta2]
+        qvel = self.data.qvel  # [dtheta_base, dtheta1, dtheta2]
+
+        theta_base = qpos[0]
+        theta1 = qpos[1]
+        theta2 = qpos[2]
+
+        dtheta_base = qvel[0]
+        dtheta1 = qvel[1]
+        dtheta2 = qvel[2]
+
+        # 获取末端位置
+        tip_site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, "flag")
+        tip_pos = self.data.site_xpos[tip_site_id]
+        tip_pos_z = tip_pos[2]
+
+        # 可选：角动量和（估计旋转趋势）
+        angular_momentum_sum = dtheta_base + dtheta1 + dtheta2
+
+        obs = np.array(
+            [
+                np.cos(theta_base),
+                np.sin(theta_base),
+                np.cos(theta1),
+                np.sin(theta1),
+                np.cos(theta2),
+                np.sin(theta2),
+                dtheta_base,
+                dtheta1,
+                dtheta2,
+                tip_pos_z,
+                angular_momentum_sum,
+            ],
+            dtype=np.float32,
+        )
+
+        return obs
+
     def _get_rew(self, x, y, terminated):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
@@ -167,7 +209,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
     def compute_reward(self, x, y, terminated):
         target_pos = np.array([0, 0, 0.5365])
-        # theta = self.data.qpos[0]
+        theta1, theta2 = self.data.qpos[1], self.data.qpos[2]
         v0, v1, v2 = self.data.qvel
         # move the reward to above 0
         shift = 2
@@ -183,7 +225,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             swing_reward = 0.5 * angular_momentum - 0.1 * ctrl_penalty
 
         if y > 0.3:
-            posture_reward = 5 * y
+            posture_reward = 2 - 5 * abs(0.5365 - y) - abs(theta1 - theta2) * 0.5
             ctrl_penalty *= 2
 
         vel_penalty = (7 * v0**2 + 3 * v1**2 + 3 * v2**2) * 7e-3 * (
@@ -191,7 +233,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ) + 7e-2 * ctrl_penalty
 
         if y > 0.5:
-            vel_penalty += (v2**2) * 0.1
+            vel_penalty += (v2**2) * 0.1 + (v1**2) * 0.2
 
         alive_bonus = (posture_reward - 10 * (y - target_pos[2]) ** 2) * int(
             not terminated
