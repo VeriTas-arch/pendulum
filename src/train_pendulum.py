@@ -110,7 +110,7 @@ elif ENV_TYPE == 2:
         "CustomRotaryInvertedDoublePendulum-v1",
         n_envs=16,
         wrapper_class=gym.wrappers.TimeLimit,
-        wrapper_kwargs={"max_episode_steps": 1000},
+        wrapper_kwargs={"max_episode_steps": 2000},
         env_kwargs={
             "mode": MODE,
             # "render_mode": "human"
