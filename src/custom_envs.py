@@ -3,8 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -132,7 +131,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_multi_stage(x, y, terminated)
+        reward, reward_info = self.compute_reward(x, y, terminated)
 
         info = reward_info
 
@@ -163,20 +162,20 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         target_pos = np.array([0, 0, 0.5365])
         # theta = self.data.qpos[0]
         v0, v1, v2 = self.data.qvel
-        _healthy_reward = 0
 
         posture_reward = 0
+        ctrl_penalty = 0
         if y > 0.3:
-            posture_reward = 3 * y
+            posture_reward = 5 * y
+            ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
-        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
-        alive_bonus = _healthy_reward - 10 * (y - target_pos[2]) ** 2
+        alive_bonus = posture_reward - 10 * (y - target_pos[2]) ** 2
         dist_penalty = 1e-2 * (x - 0.2159) ** 2
         vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
             0.5365 + y
         ) + 7e-2 * ctrl_penalty
 
-        reward = alive_bonus - dist_penalty - vel_penalty + posture_reward
+        reward = alive_bonus - dist_penalty - vel_penalty
         reward_info = {
             "reward_survive": alive_bonus,
             "distance_penalty": -dist_penalty,
@@ -191,7 +190,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
         # 阶段划分阈值
-        swing_threshold = -0.2  # 小于此值为“蓄能阶段”
+        swing_threshold = -0.3  # 小于此值为“蓄能阶段”
         upright_threshold = 0.5  # 超过此值视为“成功起摆”
 
         # -----------------------------
@@ -215,7 +214,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # -----------------------------
         # 惩罚项：位置偏差、能量消耗
         # -----------------------------
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2
         vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.5365 + y)
         ctrl_penalty_term = 7e-2 * ctrl_penalty
 

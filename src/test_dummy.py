@@ -91,9 +91,9 @@ with mujoco.viewer.launch_passive(
         # print(data.qvel)
         # tip_pos = data.site_xpos[site_id]
         # print("link2 末端位置：", tip_pos)
-        print(data.qpos)
-        # x, _, y = data.site_xpos[4]
-        # print("x:", x, "y:", y)
+        # print(data.qpos)
+        x, _, y = data.site_xpos[4]
+        print("x:", x, "y:", y)
 
         # reward, reward_info = compute_reward(model, data)
         # print("reward:", reward)
