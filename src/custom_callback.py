@@ -1,7 +1,7 @@
-from pathlib import Path
 import csv
 import os
 import time
+from pathlib import Path
 
 from stable_baselines3.common.callbacks import BaseCallback
 
@@ -49,7 +49,11 @@ class LoggingCallback(BaseCallback):
             )
 
             # 获取当前日志字典
-            log_dict = {k: v for k, v in self.logger.name_to_value.items() if isinstance(v, (int, float))}
+            log_dict = {
+                k: v
+                for k, v in self.logger.name_to_value.items()
+                if isinstance(v, (int, float))
+            }
             if log_dict:
                 write_header = (
                     not os.path.exists(self.csv_path) or not self.header_written
