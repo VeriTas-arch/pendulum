@@ -7,7 +7,7 @@ from custom_callback import LoggingCallback
 
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODE = "stable"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
 EXTRA = "train_test_3"  # 额外的后缀，不加则设为 None
 

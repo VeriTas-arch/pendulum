@@ -4,8 +4,7 @@ from pathlib import Path
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -105,7 +104,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         elif self.mode == "stable":
             # self.init_qpos = np.array([0.0, 0.0, 0.0])
             self.init_qpos = np.array([0.0, sign * angle_offset, 0])
-            amp = 1
+            amp = 1.0
             self.init_qvel = np.array([0.0, sign * 0.2 * amp, sign * 0.5 * amp])
         else:
             raise ValueError(
@@ -180,7 +179,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             posture_reward = 5 * y
             ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
-        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
+        vel_penalty = (7 * v0**2 + 3 * v1**2 + 3 * v2**2) * 7e-3 * (
             0.5365 + y
         ) + 7e-2 * ctrl_penalty
 
@@ -194,8 +193,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # 新增奖励：靠近最高点时速度小
         peak_slow_bonus = 0
-        if y > 0.52 and abs(v2) < 0.5:
-            peak_slow_bonus = 3 * (0.55 - abs(v2))  # 奖励速度低
+        if y > 0.5 and abs(v2) < 0.6 and abs(v1) < 0.4:
+            peak_slow_bonus = 5 * (0.6 - abs(v2) - abs(v1))  # 奖励速度低
 
         reward = alive_bonus - dist_penalty - vel_penalty + peak_slow_bonus + shift
         reward_info = {
