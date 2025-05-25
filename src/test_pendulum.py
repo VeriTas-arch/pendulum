@@ -6,13 +6,14 @@ import pygame
 
 import utils
 from custom_wrapper import PerturbWrapper
+import time
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "train_test_2"  # 额外的后缀，不加则设为 None
+EXTRA = "train_test_3"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -61,6 +62,7 @@ elif ENV_TYPE == 2:
         )
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
+    stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_2")
 
 elif ENV_TYPE == 3:
     gym.register(
@@ -101,8 +103,28 @@ while not done:
     env.set_perturbation(perturbation)
 
     # 模型预测 + 应用扰动
-    action, _ = model.predict(obs, deterministic=True)
+    _, _, y = env.unwrapped.data.site_xpos[4]
+
+    alpha = np.clip((y - 0.5) / (0.52 - 0.5), 0.0, 1.0)
+
+    action_swingup = model.predict(obs, deterministic=True)[0]
+    action_stable = stable_model.predict(obs, deterministic=True)[0]
+
+    # if y > 0.525:
+    #     action, _ = stable_model.predict(obs, deterministic=True)
+    # else:
+    #     action, _ = model.predict(obs, deterministic=True)
+
+    action = (1 - alpha) * action_swingup + alpha * action_stable
+
+    # action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
+
+    # if y > 0.525:
+    #     print("y:", y)
+    #     v0, v1, v2 = env.unwrapped.data.qvel
+    #     print("v0:", v0, "v1:", v1, "v2:", v2)
+    #     time.sleep(100)
 
     env.render()
     screen.fill((255, 255, 255))

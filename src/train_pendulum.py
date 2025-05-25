@@ -9,7 +9,7 @@ ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvert
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
-EXTRA = "train_test_2"  # 额外的后缀，不加则设为 None
+EXTRA = "train_test_3"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -121,7 +121,7 @@ elif ENV_TYPE == 2:
         if LOAD_MODEL:
             model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
         else:
-            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, ent_coef=0.5)
+            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4)
 
         model.learn(
             total_timesteps=1e6,
