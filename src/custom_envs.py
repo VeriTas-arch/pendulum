@@ -3,8 +3,7 @@ from pathlib import Path
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -132,7 +131,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward(x, y, terminated)
+        reward, reward_info = self.compute_reward_multi_stage(x, y, terminated)
 
         info = reward_info
 
@@ -161,7 +160,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
     def compute_reward(self, x, y, terminated):
         target_pos = np.array([0, 0, 0.5365])
-        theta = self.data.qpos[0]
+        # theta = self.data.qpos[0]
         v0, v1, v2 = self.data.qvel
         _healthy_reward = 0
 
@@ -170,14 +169,71 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             posture_reward = 3 * y
 
         ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
-
         alive_bonus = _healthy_reward - 10 * (y - target_pos[2]) ** 2
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2 + 1e-2 * abs(theta)
-        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 + 7e-2 * ctrl_penalty
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
+            0.5365 + y
+        ) + 7e-2 * ctrl_penalty
 
         reward = alive_bonus - dist_penalty - vel_penalty + posture_reward
         reward_info = {
             "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+        }
+
+        return reward, reward_info
+
+    def compute_reward_multi_stage(self, x, y, terminated):
+        target_pos = np.array([0, 0, 0.5365])
+        v0, v1, v2 = self.data.qvel
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+
+        # 阶段划分阈值
+        swing_threshold = -0.2  # 小于此值为“蓄能阶段”
+        upright_threshold = 0.5  # 超过此值视为“成功起摆”
+
+        # -----------------------------
+        # 阶段 1：鼓励振荡（角速度 + 能量）
+        # -----------------------------
+        swing_reward = 0
+        if y < swing_threshold:
+            angular_momentum = abs(v1) + abs(v2)
+            swing_reward = 0.5 * angular_momentum - 0.1 * ctrl_penalty
+
+        # -----------------------------
+        # 阶段 2：鼓励竖直上摆 + 姿态奖励
+        # -----------------------------
+        upright_bonus = 0
+        posture_reward = 0
+        if y >= swing_threshold:
+            upright_bonus = -10 * (y - target_pos[2]) ** 2
+            if y > upright_threshold:
+                posture_reward = 5 * y  # 奖励越高越好
+
+        # -----------------------------
+        # 惩罚项：位置偏差、能量消耗
+        # -----------------------------
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.5365 + y)
+        ctrl_penalty_term = 7e-2 * ctrl_penalty
+
+        # -----------------------------
+        # 最终奖励加权
+        # -----------------------------
+        reward = (
+            swing_reward
+            + upright_bonus
+            + posture_reward
+            - dist_penalty
+            - vel_penalty
+            - ctrl_penalty_term
+        )
+
+        reward_info = {
+            "reward_swing": swing_reward,
+            "reward_upright": upright_bonus,
+            "reward_posture": posture_reward,
             "distance_penalty": -dist_penalty,
             "velocity_penalty": -vel_penalty,
         }

@@ -9,7 +9,7 @@ ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvert
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
-EXTRA = "train_test_1"  # 额外的后缀，不加则设为 None
+EXTRA = "train_test_2"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -108,7 +108,7 @@ elif ENV_TYPE == 2:
     )
     env = make_vec_env(
         "CustomRotaryInvertedDoublePendulum-v1",
-        n_envs=4,
+        n_envs=8,
         wrapper_class=gym.wrappers.TimeLimit,
         wrapper_kwargs={"max_episode_steps": 1000},
         env_kwargs={
