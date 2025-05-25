@@ -289,7 +289,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
         if y > 0.3:
             height_bonus = np.exp(-8 * (y - target_y) ** 2) * 2.5
-            angle_bonus = np.exp(-3 * abs(theta1 - theta2)) * 1.0
+            angle_bonus = (
+                np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 0.5
+            )
             posture_reward = height_bonus + angle_bonus
             ctrl_penalty *= 1.05
 
@@ -300,7 +302,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         if y > 0.5:
             vel_penalty += 0.1 * v2**2 + 0.2 * v1**2
-            alive_bonus = (posture_reward + 5.0) * int(not terminated)
+            alive_bonus = (posture_reward + 3.0) * int(not terminated)
 
         # --- 额外：顶端速度尽量小 ---
         if y > 0.5:
@@ -314,7 +316,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # --- 平滑动作惩罚 ---
         if hasattr(self, "prev_action"):
             delta_u = np.sum((self.prev_action - ctrl) ** 2)
-            action_smooth_penalty = 0.05 * delta_u
+            action_smooth_penalty = 0.5 * delta_u
         self.prev_action = np.copy(ctrl)
 
         # --- 总奖励计算 ---

@@ -1,10 +1,14 @@
 from pathlib import Path
+import csv
+import os
+import time
 
 from stable_baselines3.common.callbacks import BaseCallback
 
 import utils
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
+CSV_DIR = DATA_DIR / "csv"  # CSV目录
 
 
 class LoggingCallback(BaseCallback):
@@ -31,13 +35,28 @@ class LoggingCallback(BaseCallback):
         self.mode = mode
         self.env_type = env_type
         self.extra = extra
+        self.csv_path = str(CSV_DIR / f"{model_name}_{mode}_{extra}_{time.strftime("%H%M%S")}.csv")
+        self.header_written = False
 
     def _on_step(self) -> bool:
         if self.num_timesteps % self.log_interval == 0:
-            print(f"Step: {self.num_timesteps}, Reward: {self.locals['rewards']}")
+            # print(f"Step: {self.num_timesteps}, Reward: {self.locals['rewards']}")
 
             utils.save_model(
                 self.model, self.env_type, self.model_name, self.mode, self.extra
             )
+
+            # 获取当前日志字典
+            log_dict = self.logger.get_log_dict()
+            if log_dict:
+                write_header = (
+                    not os.path.exists(self.csv_path) or not self.header_written
+                )
+                with open(self.csv_path, "a", newline="") as f:
+                    writer = csv.DictWriter(f, fieldnames=log_dict.keys())
+                    if write_header:
+                        writer.writeheader()
+                        self.header_written = True
+                    writer.writerow(log_dict)
 
         return True
