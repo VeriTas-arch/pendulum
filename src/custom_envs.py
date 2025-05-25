@@ -1,10 +1,10 @@
 import logging
 from pathlib import Path
+import random
 
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import \
-    InvertedDoublePendulumEnv
+from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
 
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 DIP_XML_DIR = f"{ASSET_DIR}/inverted_double_pendulum.xml"
@@ -97,10 +97,15 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         )
 
     def reset_model(self):
+        angle_offset = np.pi / 18
+        sign = random.choice([-1, 1])
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            self.init_qpos = np.array([0.0, 0.0, 0.0])
+            # self.init_qpos = np.array([0.0, 0.0, 0.0])
+            self.init_qpos = np.array([0.0, sign * angle_offset, 0])
+            amp = 1
+            self.init_qvel = np.array([0.0, sign * 0.2 * amp, sign * 0.5 * amp])
         else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
@@ -127,7 +132,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.45)
+            terminated = bool(y <= 0.3)
         elif self.mode == "test":
             terminated = False
 
@@ -164,7 +169,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # theta = self.data.qpos[0]
         v0, v1, v2 = self.data.qvel
         # move the reward to above 0
-        shift = 7
+        shift = 2
 
         posture_reward = 0
         ctrl_penalty = 0
@@ -179,16 +184,24 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ) + 7e-2 * ctrl_penalty
 
         if y > 0.5:
-            vel_penalty = (v0**2 + v1**2 + v2**2) * 7e-2
+            vel_penalty += (v2**2) * 0.1
 
-        alive_bonus = posture_reward - 10 * (y - target_pos[2]) ** 2
+        alive_bonus = (posture_reward - 10 * (y - target_pos[2]) ** 2) * int(
+            not terminated
+        )
         dist_penalty = 1e-2 * (x - 0.2159) ** 2
 
-        reward = alive_bonus - dist_penalty - vel_penalty + shift
+        # 新增奖励：靠近最高点时速度小
+        peak_slow_bonus = 0
+        if y > 0.52 and abs(v2) < 0.5:
+            peak_slow_bonus = 3 * (0.55 - abs(v2))  # 奖励速度低
+
+        reward = alive_bonus - dist_penalty - vel_penalty + peak_slow_bonus + shift
         reward_info = {
             "reward_survive": alive_bonus,
             "distance_penalty": -dist_penalty,
             "velocity_penalty": -vel_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
         }
 
         return reward, reward_info
