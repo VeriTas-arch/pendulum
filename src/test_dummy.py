@@ -1,11 +1,12 @@
 import time
 from pathlib import Path
-from custom_envs import CustomRotaryInvertedDoublePendulumEnv
 
 import glfw
 import mujoco
 import mujoco.viewer
 import numpy as np  # noqa: F401
+
+from custom_envs import CustomRotaryInvertedDoublePendulumEnv
 
 # 加载模型
 XML_NAME = "rotary_inverted_double_pendulum"  # "rotary_inverted_double_pendulum"
