@@ -128,7 +128,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return self._get_obs()
 
     def step(self, action):
-        noise = np.random.normal(0, 0.01, size=np.shape(action))  # 均值0，标准差0.05
+        noise = np.random.normal(0, 0.0001, size=np.shape(action))
         perturbed_action = action + noise
 
         self.do_simulation(perturbed_action, self.frame_skip)
@@ -180,8 +180,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         )
 
         # 为观测添加高斯噪声（均值0，标准差0.02）
-        obs_noise = np.random.normal(0, 0.01, size=obs.shape).astype(np.float64)
-        obs = obs + obs_noise
+        # obs_noise = np.random.normal(0, 0.01, size=obs.shape).astype(np.float64)
+        # obs = obs + obs_noise
 
         return obs
 
