@@ -7,8 +7,8 @@ from custom_callback import LoggingCallback
 
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
+MODE = "test"  # test for swing up, stable for stable control
+LOAD_MODEL = False  # 是否加载模型
 EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
 
 
@@ -124,7 +124,7 @@ elif ENV_TYPE == 2:
             model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, device="cuda")
 
         model.learn(
-            total_timesteps=1e6,
+            total_timesteps=1e7,
             callback=LoggingCallback(
                 log_interval=2000,
                 model_name="SAC",
