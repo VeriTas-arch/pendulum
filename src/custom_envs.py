@@ -142,7 +142,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test(x, y, terminated)
+        reward, reward_info = self.compute_reward_test_2(x, y, terminated)
 
         info = reward_info
 
@@ -287,7 +287,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             swing_reward = 1.2 * theta_shift
 
         if y > 0:
-            swing_reward += 3
+            swing_reward += 1.5
 
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
         if y > 0.3:
@@ -345,6 +345,62 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
+
+    def compute_reward_test_2(self, x, y, terminated):
+        theta0, theta1, theta2 = self.data.qpos
+        v0, v1, v2 = self.data.qvel
+        ctrl = np.array(self.data.ctrl)
+
+        # --- 目标设置 ---
+        target_y = 0.5365
+        shift = 0.0
+
+        # --- 奖励组件初始化 ---
+        reward = 0.0
+        swing_reward = 0.0
+        peak_bonus = 0.0
+        smooth_bonus = 0.0
+        ctrl_penalty = 0.01 * np.sum(ctrl**2)
+
+        # === 1. 起摆阶段奖励：靠近90度点 ===
+        if y < 0.2:
+            # 90度姿态奖励（theta1 ≈ π/2）
+            angle_error_45 = abs(theta1 - np.pi/4) + abs(theta2)
+            if angle_error_45 < 0.3:
+                swing_reward = 2.0 * (1.0 - angle_error_45)  # 强化精确达到π/2
+            else:
+                swing_reward = 0.5 * np.clip(np.abs(v1) + np.abs(v2), 0, 5)  # 有动能也给一点
+
+        # === 2. 冲顶阶段奖励：靠近顶部姿态 + 速度小 ===
+        if y > 0.4:
+            # 高度奖励
+            height_bonus = np.exp(-8 * (y - target_y) ** 2) * 3.0
+
+            # 姿态奖励（theta1 ≈ π, theta2 ≈ 0）
+            angle_error_top = abs(theta1 - np.pi) + abs(theta2)
+            angle_bonus = np.exp(-3 * angle_error_top)
+
+            # 速度惩罚（接近稳态）
+            speed = abs(v1) + abs(v2)
+            slow_bonus = np.exp(-4 * speed)
+
+            peak_bonus = height_bonus + angle_bonus + 2.0 * slow_bonus
+
+            # 顶端保持奖励（不终止）
+            if not terminated:
+                reward += 2.5
+
+        # === 总奖励叠加 ===
+        reward += swing_reward
+        reward += peak_bonus
+        reward -= ctrl_penalty
+
+        return reward, {
+            "swing_reward": swing_reward,
+            "peak_bonus": peak_bonus,
+            "ctrl_penalty": -ctrl_penalty,
+        }
+
 
     def compute_reward_her(achieved_goal, desired_goal, info=None):
         """
