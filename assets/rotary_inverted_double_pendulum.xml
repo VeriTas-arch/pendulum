@@ -38,7 +38,7 @@
                     <body name="link2" pos="0 0 0.2">
                         <!-- <joint name="hinge2" type="hinge" axis="1 0 0" limited="false" /> -->
                         <joint name="hinge2" type="hinge" axis="1 0 0" limited="true"
-                            range="-1.523 1.523" />
+                            range="-0.5236 0.5236" />
                         <!-- <inertial pos="0 0 0.16825" mass="0.127" diaginertia="0.001 0.001 0.001" /> -->
 
                         <!-- From joint upward -->
