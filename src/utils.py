@@ -3,6 +3,8 @@ from pathlib import Path
 from stable_baselines3 import PPO, SAC
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
+LOG_DIR = DATA_DIR / "log"  # 日志目录
+CSV_DIR = DATA_DIR / "csv"  # CSV目录
 
 
 def load_model(env, env_type, model_type, mode, extra=None):

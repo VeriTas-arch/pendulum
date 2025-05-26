@@ -7,8 +7,8 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 import utils
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-CSV_DIR = DATA_DIR / "csv"  # CSV目录
+DATA_DIR = utils.DATA_DIR  # 数据目录
+CSV_DIR = utils.CSV_DIR  # CSV目录
 
 
 class LoggingCallback(BaseCallback):

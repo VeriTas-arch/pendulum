@@ -8,8 +8,8 @@ from custom_callback import LoggingCallback
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
-EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
+LOAD_MODEL = False  # 是否加载模型
+EXTRA = "new_obs_2"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -121,7 +121,7 @@ elif ENV_TYPE == 2:
         if LOAD_MODEL:
             model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
         else:
-            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4)
+            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, tensorboard_log=str(utils.LOG_DIR))
 
         model.learn(
             total_timesteps=1e7,
