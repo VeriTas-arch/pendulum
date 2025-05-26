@@ -268,7 +268,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 常量与参数 ---
         target_y = 0.5365
-        shift = -2.0
+        shift = 0.0
 
         # --- 奖励组件初始化 ---
         posture_reward = 0.0
@@ -282,12 +282,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl_penalty = 0.02 * np.sum(ctrl**2)
 
         # --- 摆动阶段奖励：鼓励产生角动量（当高度很低时） ---
-        if y < -0.3:
-            angular_momentum = abs(v1) + abs(v2)
-            swing_reward = 0.3 * angular_momentum - 0.1 * ctrl_penalty
+        if y < -0.32:
+            angular_momentum = 0.2 * abs(v1) + 0.3 * abs(v2)
+            swing_reward = 1.2 * angular_momentum
 
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
-        if y > 0.3:
+        if y > 0.32:
             height_bonus = np.exp(-8 * (y - target_y) ** 2) * 2.5
             angle_bonus = (
                 np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 0.5
@@ -297,11 +297,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 顶端速度惩罚 ---
         base_vel_penalty = 7 * v0**2 + 3 * v1**2 + 3 * v2**2
-        height_factor = 1 + 0.5 * np.tanh(5 * (y - 0.45))
+        height_factor = 0.5 + 0.5 * np.tanh(5 * (y - 0.45))
         vel_penalty = base_vel_penalty * 7e-3 * height_factor + 0.07 * ctrl_penalty
 
         if y > 0.5:
-            vel_penalty += 0.1 * v2**2 + 0.2 * v1**2
             alive_bonus = (posture_reward + 3.0) * int(not terminated)
 
         # --- 额外：顶端速度尽量小 ---
@@ -311,7 +310,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 额外：距离偏移惩罚（保持在轨道中央） ---
         if y > 0.5 and not terminated:
-            theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
+            # theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
+            ...
 
         # --- 平滑动作惩罚 ---
         if hasattr(self, "prev_action"):
@@ -324,7 +324,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             alive_bonus
             + swing_reward
             + peak_slow_bonus
-            + posture_reward
             - vel_penalty
             - ctrl_penalty
             - theta0_penalty
@@ -335,7 +334,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # --- 可视化用信息 ---
         reward_info = {
             "reward_survive": alive_bonus,
-            "posture_reward": posture_reward,
             "velocity_penalty": -vel_penalty,
             "ctrl_penalty": -ctrl_penalty,
             "peak_slow_bonus": peak_slow_bonus,
@@ -345,6 +343,62 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
+
+    def compute_reward_her(achieved_goal, desired_goal, info=None):
+        """
+        achieved_goal, desired_goal 均为长度为6的数组，格式假设为：
+        [theta1_90, theta2_90, theta1_top, theta2_top, v1_top, v2_top]
+
+        目标1: 90度角目标 (theta1_90, theta2_90)
+        目标2: 顶端目标 (theta1_top, theta2_top)，同时约束顶端速度 (v1_top, v2_top)
+
+        这里角度和速度都可根据你实际状态设计做调整。
+        """
+
+        # 目标阈值设置
+        angle_threshold_90 = 0.1  # 90度目标的角度容忍度（弧度）
+        angle_threshold_top = 0.1  # 顶端目标角度容忍度
+        velocity_threshold_top = 0.1  # 顶端速度容忍度
+
+        # 拆分achieved和desired
+        ag_90 = achieved_goal[0:2]
+        dg_90 = desired_goal[0:2]
+
+        ag_top_angle = achieved_goal[2:4]
+        dg_top_angle = desired_goal[2:4]
+
+        ag_top_vel = achieved_goal[4:6]
+        dg_top_vel = desired_goal[4:6]  # 期望速度一般为0
+
+        # 计算距离（L2范数）
+        dist_90 = np.linalg.norm(ag_90 - dg_90)
+        dist_top_angle = np.linalg.norm(ag_top_angle - dg_top_angle)
+        dist_top_vel = np.linalg.norm(ag_top_vel - dg_top_vel)
+
+        # 目标1：90度角稀疏奖励
+        reward_90 = 0 if dist_90 < angle_threshold_90 else -1
+
+        # 目标2：顶端角度稀疏奖励
+        reward_top_angle = 0 if dist_top_angle < angle_threshold_top else -1
+
+        # 目标2：顶端速度稀疏奖励
+        reward_top_vel = 0 if dist_top_vel < velocity_threshold_top else -1
+
+        # 综合目标2奖励：顶端角度和速度都达标才算达成
+        reward_top = 0 if (reward_top_angle == 0 and reward_top_vel == 0) else -1
+
+        # 总奖励是两个目标的和，也可以加权
+        total_reward = reward_90 + reward_top
+
+        # 额外信息反馈（方便调试）
+        reward_info = {
+            "reward_90_deg": reward_90,
+            "reward_top_angle": reward_top_angle,
+            "reward_top_velocity": reward_top_vel,
+            "reward_top_combined": reward_top,
+        }
+
+        return total_reward, reward_info
 
 
 class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
