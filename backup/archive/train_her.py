@@ -29,20 +29,15 @@ env = make_vec_env(
 )
 
 if LOAD_MODEL:
-    model = HER.load(
-        f"{DATA_DIR}/sac_her_rotary_inverted_double_pendulum_{MODE}.zip",
-        env=env,
-        model_class=SAC,
+    model = SAC.load(
+        f"{DATA_DIR}/sac_her_rotary_inverted_double_pendulum_{MODE}.zip", env=env
     )
 else:
     model = SAC(
         policy="MultiInputPolicy",
         env=env,
         replay_buffer_class=HerReplayBuffer,
-        replay_buffer_kwargs=dict(
-            n_sampled_goal=4,
-            goal_selection_strategy="future",
-        ),
+        replay_buffer_kwargs=dict(n_sampled_goal=4, goal_selection_strategy="future"),
         buffer_size=int(1e6),
         batch_size=256,
         gamma=0.98,
@@ -51,15 +46,12 @@ else:
         tensorboard_log=LOG_DIR,
     )
 
-model.learn(total_timesteps=1e6,
-            callback=LoggingCallback(
-                log_interval=2000,
-                model_name="HER",
-                mode=MODE,
-                env_type=ENV_TYPE,
-                extra=EXTRA,
-            ),
-            )
+model.learn(
+    total_timesteps=1e6,
+    callback=LoggingCallback(
+        log_interval=2000, model_name="HER", mode=MODE, env_type=ENV_TYPE, extra=EXTRA
+    ),
+)
 
 save_path = f"{DATA_DIR}/sac_her_rotary_inverted_double_pendulum_{MODE}.zip"
 model.save(save_path)
