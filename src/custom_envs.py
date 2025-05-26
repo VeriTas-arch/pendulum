@@ -142,7 +142,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test_2(x, y, terminated)
+        reward, reward_info = self.compute_reward_test(x, y, terminated)
 
         info = reward_info
 
@@ -346,7 +346,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
     def compute_reward_test_2(self, x, y, terminated):
         target_pos = np.array([0, 0, 0.5365])
-        # theta = self.data.qpos[0]
+        theta0, theta1, theta2 = self.data.qpos
         v0, v1, v2 = self.data.qvel
         # move the reward to above 0
         shift = 2
@@ -355,7 +355,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl_penalty = 0
         vel_penalty = 0
 
-        if y > 0.3:
+        if y > 0.45:
             posture_reward = 5 * y
             ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
@@ -363,10 +363,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             0.5365 + y
         ) + 7e-2 * ctrl_penalty
 
-        if y > 0.45:
+        if y > 0.4:
             vel_penalty += (v2**2) * 0.1
 
-        alive_bonus = (posture_reward - 10 * (y - target_pos[2]) ** 2) * int(
+        alive_bonus = (posture_reward - 15 * (y - target_pos[2]) ** 2) * int(
             not terminated
         )
         dist_penalty = 1e-2 * (x - 0.2159) ** 2
