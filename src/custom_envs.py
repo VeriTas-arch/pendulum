@@ -386,62 +386,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         return reward, reward_info
 
-    def compute_reward_her(achieved_goal, desired_goal, info=None):
-        """
-        achieved_goal, desired_goal 均为长度为6的数组，格式假设为：
-        [theta1_90, theta2_90, theta1_top, theta2_top, v1_top, v2_top]
-
-        目标1: 90度角目标 (theta1_90, theta2_90)
-        目标2: 顶端目标 (theta1_top, theta2_top)，同时约束顶端速度 (v1_top, v2_top)
-
-        这里角度和速度都可根据你实际状态设计做调整。
-        """
-
-        # 目标阈值设置
-        angle_threshold_90 = 0.1  # 90度目标的角度容忍度（弧度）
-        angle_threshold_top = 0.1  # 顶端目标角度容忍度
-        velocity_threshold_top = 0.1  # 顶端速度容忍度
-
-        # 拆分achieved和desired
-        ag_90 = achieved_goal[0:2]
-        dg_90 = desired_goal[0:2]
-
-        ag_top_angle = achieved_goal[2:4]
-        dg_top_angle = desired_goal[2:4]
-
-        ag_top_vel = achieved_goal[4:6]
-        dg_top_vel = desired_goal[4:6]  # 期望速度一般为0
-
-        # 计算距离（L2范数）
-        dist_90 = np.linalg.norm(ag_90 - dg_90)
-        dist_top_angle = np.linalg.norm(ag_top_angle - dg_top_angle)
-        dist_top_vel = np.linalg.norm(ag_top_vel - dg_top_vel)
-
-        # 目标1：90度角稀疏奖励
-        reward_90 = 0 if dist_90 < angle_threshold_90 else -1
-
-        # 目标2：顶端角度稀疏奖励
-        reward_top_angle = 0 if dist_top_angle < angle_threshold_top else -1
-
-        # 目标2：顶端速度稀疏奖励
-        reward_top_vel = 0 if dist_top_vel < velocity_threshold_top else -1
-
-        # 综合目标2奖励：顶端角度和速度都达标才算达成
-        reward_top = 0 if (reward_top_angle == 0 and reward_top_vel == 0) else -1
-
-        # 总奖励是两个目标的和，也可以加权
-        total_reward = reward_90 + reward_top
-
-        # 额外信息反馈（方便调试）
-        reward_info = {
-            "reward_90_deg": reward_90,
-            "reward_top_angle": reward_top_angle,
-            "reward_top_velocity": reward_top_vel,
-            "reward_top_combined": reward_top,
-        }
-
-        return total_reward, reward_info
-
 
 class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
     def __init__(self, mode=None, custom_xml_file=RIP_XML_DIR, *args, **kwargs):
