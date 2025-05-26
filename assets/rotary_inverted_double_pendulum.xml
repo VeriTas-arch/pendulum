@@ -56,6 +56,6 @@
 
     <actuator>
         <!-- Rotary base actuator -->
-        <motor name="rotary_motor_act" joint="rotary_motor" ctrlrange="-1 1" gear="25" />
+        <motor name="rotary_motor_act" joint="rotary_motor" ctrlrange="-1 1" gear="20" />
     </actuator>
 </mujoco>

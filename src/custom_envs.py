@@ -142,7 +142,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test(x, y, terminated)
+        reward, reward_info = self.compute_reward_test_2(x, y, terminated)
 
         info = reward_info
 
@@ -277,7 +277,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         peak_slow_bonus = 0.0
 
         # --- 控制惩罚 ---
-        ctrl_penalty = 0.02 * np.sum(ctrl**2)
+        ctrl_penalty = 0.2 * np.sum(ctrl**2)
 
         # --- 摆动阶段奖励：鼓励产生角动量（当高度很低时） ---
         if y < -0.32:
@@ -294,7 +294,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
                 np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 0.5
             )
             posture_reward = height_bonus + angle_bonus
-            ctrl_penalty *= 1.05
+            ctrl_penalty *= 1.5
 
         # --- 顶端速度惩罚 ---
         base_vel_penalty = 7 * v0**2 + 3 * v1**2 + 3 * v2**2
