@@ -9,7 +9,7 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
+MODE = "test"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
@@ -114,7 +114,8 @@ while not done:
     action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
 
-    print(info)
+    print(reward)
+    # print(info)
 
     # print("action:", action)
 

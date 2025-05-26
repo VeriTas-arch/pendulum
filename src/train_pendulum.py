@@ -108,7 +108,7 @@ elif ENV_TYPE == 2:
     )
     env = make_vec_env(
         "CustomRotaryInvertedDoublePendulum-v1",
-        n_envs=32,
+        n_envs=16,
         wrapper_class=gym.wrappers.TimeLimit,
         wrapper_kwargs={"max_episode_steps": 2000},
         env_kwargs={
@@ -121,7 +121,7 @@ elif ENV_TYPE == 2:
         if LOAD_MODEL:
             model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
         else:
-            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, device="cuda")
+            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4)
 
         model.learn(
             total_timesteps=1e7,
