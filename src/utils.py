@@ -1,12 +1,12 @@
 from pathlib import Path
+import numpy as np
 
 from stable_baselines3 import PPO, SAC
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
-LOG_DIR = Path(__file__).resolve().parent.parent / "log" # 日志目录
+LOG_DIR = Path(__file__).resolve().parent.parent / "log"  # 日志目录
 CSV_DIR = DATA_DIR / "csv"  # CSV目录
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
-
 PINOCCHIO_XML_DIR = f"{ASSET_DIR}/pinoc_inverted_double_pendulum.xml"
 
 
@@ -61,6 +61,8 @@ def get_env_name(env_type):
     else:
         raise ValueError("Invalid environment type. Choose 0, 1, 2, or 3.")
 
+
+# ! DEPRECATED
 def rotary_to_linear_obs(obs_rotary):
     L = 0.2
     # 从 obs_rotary 中解析数据
@@ -74,15 +76,17 @@ def rotary_to_linear_obs(obs_rotary):
     theta1 = np.arctan2(sin_theta1, cos_theta1)
     theta2 = np.arctan2(sin_theta2, cos_theta2)
 
-    xpos = L*theta0
+    xpos = L * theta0
 
     # 构造线性摆的 obs
-    linear_obs = np.concatenate([
-        [xpos],  # 小车位置为 L*theta0
-        [np.sin(theta1), np.sin(theta2)],
-        [np.cos(theta1), np.cos(theta2)],
-        np.clip([qvel0, qvel1, qvel2], -10, 10),
-        [0.0],  # 没有 constraint 力，设为 0
-    ]).astype(np.float32)
+    linear_obs = np.concatenate(
+        [
+            [xpos],  # 小车位置为 L*theta0
+            [np.sin(theta1), np.sin(theta2)],
+            [np.cos(theta1), np.cos(theta2)],
+            np.clip([qvel0, qvel1, qvel2], -10, 10),
+            [0.0],  # 没有 constraint 力，设为 0
+        ]
+    ).astype(np.float32)
 
     return linear_obs
