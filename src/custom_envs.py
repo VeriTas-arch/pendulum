@@ -1,5 +1,5 @@
 import logging
-import random
+import random  # noqa: F401
 from pathlib import Path
 
 import numpy as np
@@ -142,7 +142,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test_2(x, y, terminated)
+        reward, reward_info = self.compute_reward_test(x, y, terminated)
 
         info = reward_info
 
