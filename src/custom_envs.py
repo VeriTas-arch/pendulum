@@ -283,11 +283,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 摆动阶段奖励：鼓励产生角动量（当高度很低时） ---
         if y < -0.32:
-            angular_momentum = 0.2 * abs(v1) + 0.3 * abs(v2)
-            swing_reward = 1.2 * angular_momentum
+            theta_shift = abs(theta1-np.pi)+abs(theta2)
+            swing_reward = 1.2 *theta_shift
 
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
-        if y > 0.32:
+        if y > 0.3:
             height_bonus = np.exp(-8 * (y - target_y) ** 2) * 2.5
             angle_bonus = (
                 np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 0.5
@@ -309,15 +309,14 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             peak_slow_bonus = 2.0 * max(1.2 - speed_sum, 0.0)
 
         # --- 额外：距离偏移惩罚（保持在轨道中央） ---
-        if y > 0.5 and not terminated:
+        # if y > 0.5 and not terminated:
             # theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
-            ...
 
         # --- 平滑动作惩罚 ---
-        if hasattr(self, "prev_action"):
-            delta_u = np.sum((self.prev_action - ctrl) ** 2)
-            action_smooth_penalty = 0.5 * delta_u
-        self.prev_action = np.copy(ctrl)
+        # if hasattr(self, "prev_action"):
+        #     delta_u = np.sum((self.prev_action - ctrl) ** 2)
+        #     action_smooth_penalty = 0.5 * delta_u
+        # self.prev_action = np.copy(ctrl)
 
         # --- 总奖励计算 ---
         reward = (
@@ -326,8 +325,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             + peak_slow_bonus
             - vel_penalty
             - ctrl_penalty
-            - theta0_penalty
-            - action_smooth_penalty
+            # - theta0_penalty
+            # - action_smooth_penalty
             + shift
         )
 
@@ -338,8 +337,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             "ctrl_penalty": -ctrl_penalty,
             "peak_slow_bonus": peak_slow_bonus,
             "swing_reward": swing_reward,
-            "theta0_penalty": -theta0_penalty,
-            "action_smooth_penalty": -action_smooth_penalty,
+            # "theta0_penalty": -theta0_penalty,
+            # "action_smooth_penalty": -action_smooth_penalty,
         }
 
         return reward, reward_info
