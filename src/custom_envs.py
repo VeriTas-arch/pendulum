@@ -283,8 +283,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 摆动阶段奖励：鼓励产生角动量（当高度很低时） ---
         if y < -0.32:
-            theta_shift = abs(theta1-np.pi)+abs(theta2)
-            swing_reward = 1.2 *theta_shift
+            theta_shift = abs(theta1 - np.pi) + abs(theta2)
+            swing_reward = 1.2 * theta_shift
+
+        if y > 0:
+            swing_reward += 3
 
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
         if y > 0.3:
@@ -310,7 +313,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 额外：距离偏移惩罚（保持在轨道中央） ---
         # if y > 0.5 and not terminated:
-            # theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
+        # theta0_penalty = 2.0 * (np.sin(theta0)) ** 2
 
         # --- 平滑动作惩罚 ---
         # if hasattr(self, "prev_action"):
