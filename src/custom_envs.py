@@ -100,8 +100,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
     def reset_model(self):
-        angle_offset = np.pi / 36
-        sign = random.choice([-1, 1])
+        # angle_offset = np.pi / 36
+        # sign = random.choice([-1, 1])
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
@@ -190,7 +190,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         theta = self.data.qpos[0]
         dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
         vel_penalty = 1e-4 * v0 + 2e-3 * v1**2 + 5e-3 * v2**2
-        alive_bonus = self._healthy_reward * int(not terminated)
+        alive_bonus = self._healthy_reward * int(y >= 0.2)
 
         reward = alive_bonus - dist_penalty - vel_penalty
 
@@ -275,8 +275,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         swing_reward = 0.0
         alive_bonus = 0.0
         peak_slow_bonus = 0.0
-        action_smooth_penalty = 0.0
-        theta0_penalty = 0.0
 
         # --- 控制惩罚 ---
         ctrl_penalty = 0.02 * np.sum(ctrl**2)
@@ -347,60 +345,46 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return reward, reward_info
 
     def compute_reward_test_2(self, x, y, terminated):
-        theta0, theta1, theta2 = self.data.qpos
+        target_pos = np.array([0, 0, 0.5365])
+        # theta = self.data.qpos[0]
         v0, v1, v2 = self.data.qvel
-        ctrl = np.array(self.data.ctrl)
+        # move the reward to above 0
+        shift = 2
 
-        # --- 目标设置 ---
-        target_y = 0.5365
-        shift = 0.0
+        posture_reward = 0
+        ctrl_penalty = 0
+        vel_penalty = 0
 
-        # --- 奖励组件初始化 ---
-        reward = 0.0
-        swing_reward = 0.0
-        peak_bonus = 0.0
-        smooth_bonus = 0.0
-        ctrl_penalty = 0.01 * np.sum(ctrl**2)
+        if y > 0.3:
+            posture_reward = 5 * y
+            ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
-        # === 1. 起摆阶段奖励：靠近90度点 ===
-        if y < 0.2:
-            # 90度姿态奖励（theta1 ≈ π/2）
-            angle_error_45 = abs(theta1 - np.pi/4) + abs(theta2)
-            if angle_error_45 < 0.3:
-                swing_reward = 2.0 * (1.0 - angle_error_45)  # 强化精确达到π/2
-            else:
-                swing_reward = 0.5 * np.clip(np.abs(v1) + np.abs(v2), 0, 5)  # 有动能也给一点
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
+            0.5365 + y
+        ) + 7e-2 * ctrl_penalty
 
-        # === 2. 冲顶阶段奖励：靠近顶部姿态 + 速度小 ===
-        if y > 0.4:
-            # 高度奖励
-            height_bonus = np.exp(-8 * (y - target_y) ** 2) * 3.0
+        if y > 0.45:
+            vel_penalty += (v2**2) * 0.1
 
-            # 姿态奖励（theta1 ≈ π, theta2 ≈ 0）
-            angle_error_top = abs(theta1 - np.pi) + abs(theta2)
-            angle_bonus = np.exp(-3 * angle_error_top)
+        alive_bonus = (posture_reward - 10 * (y - target_pos[2]) ** 2) * int(
+            not terminated
+        )
+        dist_penalty = 1e-2 * (x - 0.2159) ** 2
 
-            # 速度惩罚（接近稳态）
-            speed = abs(v1) + abs(v2)
-            slow_bonus = np.exp(-4 * speed)
+        # 新增奖励：靠近最高点时速度小
+        peak_slow_bonus = 0
+        if y > 0.5 and abs(v2) < 0.5:
+            peak_slow_bonus = 3 * max((1.2 - abs(v2) - abs(v1)), 0)  # 奖励速度低
 
-            peak_bonus = height_bonus + angle_bonus + 2.0 * slow_bonus
-
-            # 顶端保持奖励（不终止）
-            if not terminated:
-                reward += 2.5
-
-        # === 总奖励叠加 ===
-        reward += swing_reward
-        reward += peak_bonus
-        reward -= ctrl_penalty
-
-        return reward, {
-            "swing_reward": swing_reward,
-            "peak_bonus": peak_bonus,
-            "ctrl_penalty": -ctrl_penalty,
+        reward = alive_bonus - dist_penalty - vel_penalty + peak_slow_bonus + shift
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
         }
 
+        return reward, reward_info
 
     def compute_reward_her(achieved_goal, desired_goal, info=None):
         """
