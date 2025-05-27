@@ -141,12 +141,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.45)
+            terminated = bool(y <= 0.2)
         elif self.mode == "test":
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_stable(x, y, terminated)
+        reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
 
         info = reward_info
 
@@ -260,6 +260,49 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
+
+    def compute_reward_stable_test(self, x, y, terminated):
+        theta1, theta2 = self.data.qpos[1], self.data.qpos[2]
+        v0, v1, v2 = self.data.qvel
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+
+        y_target = 0.5365
+        y_reward = 3.0 * np.exp(-5 * (y_target - y) ** 2)  # 最高点附近奖励最大
+
+        # 姿态奖励：杆之间尽量对齐（差值越小越好）
+        posture_alignment = np.exp(-4 * (theta1 - theta2) ** 2)
+
+        # 控制惩罚
+        ctrl_penalty = 0.1 * ctrl_penalty
+
+        # 速度惩罚（在高点时惩罚更明显）
+        vel_penalty = 0.005 * (v0 ** 2 + v1 ** 2 + v2 ** 2)
+        if y > 0.4:
+            vel_penalty += 0.02 * (v1 ** 2 + v2 ** 2)
+
+        # 顶点减速奖励
+        peak_slow_bonus = 0
+        if y > 0.5 and abs(v1) < 0.5 and abs(v2) < 0.5:
+            peak_slow_bonus = 1.5 * (1.0 - abs(v1) - abs(v2))
+
+        # 存活奖励
+        alive_bonus = 1.0 * int(not terminated)
+
+        # 总奖励
+        reward = y_reward + posture_alignment + peak_slow_bonus + alive_bonus \
+                - ctrl_penalty - vel_penalty
+
+        reward_info = {
+            "y_reward": y_reward,
+            "posture_alignment": posture_alignment,
+            "velocity_penalty": -vel_penalty,
+            "ctrl_penalty": -ctrl_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
+            "alive_bonus": alive_bonus,
+        }
+
+        return reward, reward_info
+
 
     def compute_reward_test(self, x, y, terminated):
         # --- 获取状态变量 ---
