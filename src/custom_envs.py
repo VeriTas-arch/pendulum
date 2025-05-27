@@ -147,7 +147,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
         elif self.mode == "test":
             terminated = False
-            reward, reward_info = self.compute_reward_test_3(x, y, terminated)
+            reward, reward_info = self.compute_reward_test_4(x, y, terminated)
 
         # reward, reward_info = self._get_rew(x, y, terminated)
 
@@ -501,6 +501,70 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             "angle_bonus": angle_bonus,
             "upright_penalty": -(theta1**2 + theta2**2),
             "angle_diff_penalty": -abs(theta1 - theta2),
+        }
+
+        return reward, reward_info
+
+    def compute_reward_test_4(self, x, y, terminated):
+        target_pos = np.array([0, 0, 0.5365])
+        theta0, theta1, theta2 = self.data.qpos
+        v0, v1, v2 = self.data.qvel
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+        shift = 2  # 保持奖励为正
+
+        # 计算角度偏离竖直的量（0度为竖直）
+        uprightness = theta1**2 + theta2**2
+        angle_diff = abs(theta1 - theta2)
+
+        # 判断当前阶段：起摆阶段 if 摆杆角度较大（远离竖直），稳摆阶段 if 角度较小（接近竖直）
+        swingup_threshold = 0.5  # 约28.6度，可以根据实验调整
+
+        if uprightness > swingup_threshold**2:
+            # === 起摆阶段奖励 ===
+            # 鼓励角度远离竖直（摆杆展开）
+            swingup_bonus = np.exp(-3 * uprightness) * (-1) + 1.5  # 角度大时奖励高
+            # 保留一定的角度差惩罚防止两杆完全反向展开
+            angle_align_penalty = 0.3 * angle_diff
+
+            posture_reward = swingup_bonus - angle_align_penalty + 2 * y
+        else:
+            # === 稳摆阶段奖励 ===
+            # 鼓励角度接近0，且两杆对齐
+            posture_reward = 4 * np.exp(-8 * uprightness - 8 * angle_diff)
+            # 加分鼓励y高，促进稳定在最高点
+            posture_reward += 3 * y
+
+        # 速度惩罚，防止大幅摆动
+        vel_penalty = (
+            (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.54 + y)
+            + 7e-2 * ctrl_penalty
+        )
+        if y > 0.4:
+            vel_penalty += (v2**2) * 0.1
+
+        # 存活奖励，考虑是否终止
+        alive_bonus = (posture_reward - 15 * (y - target_pos[2]) ** 2) * int(
+            y > 0.4 and not terminated
+        )
+
+        # 位置惩罚，限制x轴偏移
+        dist_penalty = 1e-1 * (x - 0.2159) ** 2
+
+        # 顶端低速奖励，奖励稳定
+        peak_slow_bonus = 0
+        if y > 0.5 and abs(v2) < 0.5:
+            peak_slow_bonus = 3 * max((1.2 - abs(v2) - abs(v1)), 0)
+
+        reward = alive_bonus - dist_penalty - vel_penalty + peak_slow_bonus + shift
+
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
+            "posture_reward": posture_reward,
+            "uprightness": uprightness,
+            "angle_diff": angle_diff,
         }
 
         return reward, reward_info
