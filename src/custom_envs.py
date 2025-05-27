@@ -140,13 +140,16 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         x, _, y = self.data.site_xpos[4]
         observation = self._get_obs()
 
+        reward, reward_info = None, None
+
         if self.mode == "stable":
             terminated = bool(y <= 0.1)
+            reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
         elif self.mode == "test":
             terminated = False
+            reward, reward_info = self.compute_reward_test_3(x, y, terminated)
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
 
         info = reward_info
 
@@ -298,7 +301,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         return reward, reward_info
 
-
     def compute_reward_test(self, x, y, terminated):
         # --- 获取状态变量 ---
         theta0, theta1, theta2 = self.data.qpos
@@ -332,10 +334,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             swing_reward += 1.5
 
         # --- 姿态奖励：鼓励靠近顶部并抑制角度差 ---
-        if y > 0.3:
-            height_bonus = np.exp(-8 * (y - target_y) ** 2) * 2.5
+        if y > 0.35:
+            height_bonus = np.exp(-8 * (y - target_y) ** 2) * 3
             angle_bonus = (
-                np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 0.5
+                np.exp(-3 * abs(theta1 - theta2) - 5 * abs(np.sin(theta1))) * 1.5
             )
             posture_reward = height_bonus + angle_bonus
             ctrl_penalty *= 1.5
@@ -399,21 +401,24 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl_penalty = 0
         vel_penalty = 0
 
-        if y > 0.45:
-            posture_reward = 5 * y
+        if y > 0.4:
+            angle_bonus = (
+                np.exp(-5 * abs(theta1 - theta2) -7 * abs(np.sin(theta1))) * 2
+            )
+            posture_reward = 3 * y + angle_bonus
             ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
         vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
-            0.5365 + y
+            0.54 + y
         ) + 7e-2 * ctrl_penalty
 
         if y > 0.4:
             vel_penalty += (v2**2) * 0.1
 
         alive_bonus = (posture_reward - 15 * (y - target_pos[2]) ** 2) * int(
-            not terminated
+            bool(y > 0.5 and not terminated)
         )
-        dist_penalty = 1e-2 * (x - 0.2159) ** 2
+        dist_penalty = 1e-1 * (x - 0.2159) ** 2
 
         # 新增奖励：靠近最高点时速度小
         peak_slow_bonus = 0
@@ -429,6 +434,76 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
+
+    def compute_reward_test_3(self, x, y, terminated):
+        target_pos = np.array([0, 0, 0.5365])
+        theta0, theta1, theta2 = self.data.qpos
+        v0, v1, v2 = self.data.qvel
+        shift = 2  # 保证奖励为正
+
+        # 控制代价
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+
+        # === 姿态奖励项 ===
+        posture_reward = 0
+        angle_bonus = 0
+
+        if y > 0.4:
+            # 1. 两杆之间角度差越小越好（对齐）
+            angle_diff_penalty = abs(theta1 - theta2)
+
+            # 2. 绝对角度偏离竖直越小越好（越接近0越好）
+            uprightness_penalty = theta1**2 + theta2**2
+
+            # 综合姿态奖励项（越小越好，用 exp 凸显直立的优势）
+            angle_bonus = np.exp(-6 * angle_diff_penalty - 6 * uprightness_penalty) * 3.0
+
+            # 基于 y 高度的基本奖励
+            posture_reward = 3 * y + angle_bonus
+
+        # === 速度惩罚项 ===
+        vel_penalty = (
+            (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.54 + y)
+            + 7e-2 * ctrl_penalty
+        )
+        if y > 0.4:
+            vel_penalty += (v2**2) * 0.1
+
+        # === 存活奖励 ===
+        alive_bonus = (
+            (posture_reward - 15 * (y - target_pos[2]) ** 2)
+            * int(y > 0.5 and not terminated)
+        )
+
+        # === 位置惩罚（不偏离 x 轴） ===
+        dist_penalty = 1e-1 * (x - 0.2159) ** 2
+
+        # === 顶端慢速奖励（惩罚摆动）===
+        peak_slow_bonus = 0
+        if y > 0.5 and abs(v2) < 0.5:
+            peak_slow_bonus = 3 * max((1.2 - abs(v2) - abs(v1)), 0)
+
+        # === 最终 reward ===
+        reward = (
+            alive_bonus
+            - dist_penalty
+            - vel_penalty
+            + peak_slow_bonus
+            + shift
+        )
+
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "velocity_penalty": -vel_penalty,
+            "peak_slow_bonus": peak_slow_bonus,
+            "angle_bonus": angle_bonus,
+            "upright_penalty": -(theta1**2 + theta2**2),
+            "angle_diff_penalty": -abs(theta1 - theta2),
+        }
+
+        return reward, reward_info
+
 
 
 class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
