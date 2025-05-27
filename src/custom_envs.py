@@ -105,7 +105,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            self.init_qpos = np.array([0.0, 0.0, 0.0])
+            # self.init_qpos = np.array([0.0, 0.0, 0.0])
+
+            # init with a small angle offset
+            self.init_qpos = np.array([0.0, 0.13044601, -0.52502749])
+
             # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
             # amp = 1.0
             # self.init_qvel = np.array([0.0, sign * 0.3 * amp, sign * 0.5 * amp])
@@ -137,12 +141,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.2)
+            terminated = bool(y <= 0.45)
         elif self.mode == "test":
             terminated = False
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_test(x, y, terminated)
+        reward, reward_info = self.compute_reward_stable(x, y, terminated)
 
         info = reward_info
 
@@ -188,9 +192,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
     def _get_rew(self, x, y, terminated):
         v0, v1, v2 = self.data.qvel
         theta = self.data.qpos[0]
-        dist_penalty = 0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * abs(theta)
+        dist_penalty = (
+            0.01 * (x - 0.2159) ** 2 + (y - 0.5365) ** 2 + 0.02 * (theta) ** 2
+        )
         vel_penalty = 1e-4 * v0 + 2e-3 * v1**2 + 5e-3 * v2**2
-        alive_bonus = self._healthy_reward * int(y >= 0.2)
+        alive_bonus = self._healthy_reward * int(not terminated)
 
         reward = alive_bonus - dist_penalty - vel_penalty
 
@@ -213,7 +219,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         swing_reward = 0
         alive_bonus = 0
 
-        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2) * 0.5
+        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
 
         if y < -0.3:
             angular_momentum = abs(v1) + abs(v2)
@@ -221,11 +227,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         if y > 0.3:
             posture_reward = 2 - 3 * abs(0.5365 - y) - abs(theta1 - theta2) * 0.5
-            ctrl_penalty *= 1.2
+            ctrl_penalty *= 2
 
         vel_penalty = (7 * v0**2 + 3 * v1**2 + 3 * v2**2) * 7e-3 * (
             0.6 + y
-        ) + 7e-2 * ctrl_penalty
+        ) + 7e1 * ctrl_penalty
 
         if y > 0.5:
             vel_penalty += (v2**2) * 0.1 + (v1**2) * 0.2

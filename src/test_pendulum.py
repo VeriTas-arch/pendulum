@@ -102,7 +102,9 @@ while not done:
     env.set_perturbation(perturbation)
 
     # 模型预测 + 应用扰动
-    # _, _, y = env.unwrapped.data.site_xpos[4]
+    _, _, y = env.unwrapped.data.site_xpos[4]
+
+    print("qpos:", env.unwrapped.data.qpos)
 
     # alpha = np.clip((y - 0.45) / (0.55 - 0.45), 0.0, 1.0)
 
@@ -114,17 +116,17 @@ while not done:
     action, _ = model.predict(obs, deterministic=True)
     obs, reward, terminated, truncated, info = env.step(action)
 
-    print(reward)
+    # print(reward)
     # print(info)
 
     # print("action:", action)
 
-    # if y > 0.5:
-    #     if y > maxy:
-    #         maxy = y
-    #     print("maxy:", maxy)
-    #     v0, v1, v2 = env.unwrapped.data.qvel
-    #     print("v0:", v0, "v1:", v1, "v2:", v2)
+    if y > 0.5:
+        if y > maxy:
+            maxy = y
+        print("maxy:", maxy)
+        v0, v1, v2 = env.unwrapped.data.qvel
+        # print("v0:", v0, "v1:", v1, "v2:", v2)
 
     env.render()
     screen.fill((255, 255, 255))

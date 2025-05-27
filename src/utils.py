@@ -5,7 +5,7 @@ from stable_baselines3 import PPO, SAC
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
 LOG_DIR = Path(__file__).resolve().parent.parent / "log"  # 日志目录
-CSV_DIR = DATA_DIR / "csv"  # CSV目录
+CSV_DIR = LOG_DIR / "csv"  # CSV目录
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 PINOCCHIO_XML_DIR = f"{ASSET_DIR}/pinoc_inverted_double_pendulum.xml"
 
