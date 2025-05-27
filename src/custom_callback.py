@@ -1,7 +1,6 @@
 import csv
 import os
 import time
-from pathlib import Path
 
 from stable_baselines3.common.callbacks import BaseCallback
 

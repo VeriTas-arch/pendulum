@@ -1,12 +1,10 @@
-from pathlib import Path
-
 import matplotlib.pyplot as plt
 import pandas as pd
+import utils
 
 # CSV 文件路径
-current_dir = Path(__file__).resolve().parent
-csv_dir = current_dir.parent / "data" / "csv"
-csv_file = f"{csv_dir}/SAC_test_new_obs_20250526_100822.csv"
+CSV_DIR = utils.CSV_DIR  # CSV目录
+csv_file = f"{CSV_DIR}/SAC_test_new_obs_20250526_100822.csv"
 
 # 读取数据
 df = pd.read_csv(csv_file)
