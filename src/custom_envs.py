@@ -142,15 +142,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         reward, reward_info = None, None
 
-        reward, reward_info = None, None
-
         if self.mode == "stable":
             terminated = bool(y <= 0.0)
             reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
-            reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
         elif self.mode == "test":
             terminated = False
-            reward, reward_info = self.compute_reward_test_2(x, y, terminated)
             reward, reward_info = self.compute_reward_test_3(x, y, terminated)
 
         # reward, reward_info = self._get_rew(x, y, terminated)
