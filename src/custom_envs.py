@@ -108,11 +108,11 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             # self.init_qpos = np.array([0.0, 0.0, 0.0])
 
             # init with a small angle offset
-            self.init_qpos = np.array([0.0, 0.13, -0.5])
+            self.init_qpos = np.array([0.0, 0.5, -0.5])
 
             # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
-            # amp = 1.0
-            # self.init_qvel = np.array([0.0, sign * 0.3 * amp, sign * 0.5 * amp])
+            amp = 1.0
+            # self.init_qvel = np.array([0.0, -0.8 * amp, 0.5 * amp])
         else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."
@@ -144,7 +144,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         if self.mode == "stable":
             terminated = bool(y <= 0.0)
-            reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
+            reward, reward_info = self.compute_reward_stable_test_2(x, y, terminated)
         elif self.mode == "test":
             terminated = False
             reward, reward_info = self.compute_reward_test_4(x, y, terminated)
@@ -275,7 +275,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # 奖励项
         y_reward = 2.0 * np.exp(-20 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
-        angle_reward = 1.0 * np.exp(-5 * (theta_align) ** 2)  # 角度差越小越好
+        angle_reward = 2.0 * np.exp(-5 * (theta_align) ** 2 -5*theta1**2)  # 角度差越小越好
         speed_penalty = 0.05 * (v0**2 + v1**2 + v2**2)
         ctrl_penalty = 0.01 * (ctrl**2)
 
@@ -285,7 +285,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             stable_bonus = 1.0
 
         # 活着就奖励
-        alive_bonus = 1.0 if not terminated else 0.0
+        alive_bonus = 3.0 if not terminated else 0.0
 
         # 总奖励
         reward = (
@@ -307,6 +307,50 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
+
+    def compute_reward_stable_test_2(self, x, y, terminated):
+        v0, v1, v2 = self.data.qvel
+        theta0, theta1, theta2 = self.data.qpos
+        ctrl = self.data.ctrl[0]
+
+        # 初始状态 & 目标状态
+        q_init = np.array([0.1, -0.4])
+        q_goal = np.array([0.0, 0.0])
+        q_now = np.array([theta1, theta2])
+
+        # --- 状态距离 ---
+        dist_to_goal = np.linalg.norm(q_now - q_goal)
+        dist_to_init = np.linalg.norm(q_now - q_init)
+
+        # --- 插值权重 ---
+        # 1. Normalized progress toward goal (0 = at init, 1 = at goal)
+        total_path = np.linalg.norm(q_init - q_goal) + 1e-6  # avoid div by zero
+        progress_ratio = np.clip(1.0 - dist_to_goal / total_path, 0.0, 1.0)
+        progress_ratio = progress_ratio * 2 - 1
+
+        # 2. 基于插值的奖励（靠近目标越多，奖励越大）
+        interp_reward = 5.0 * progress_ratio  # 线性插值
+
+        # --- 惩罚项 ---
+        vel_penalty = 0.05 * (v0**2 + v1**2 + v2**2)
+        ctrl_penalty = 0.01 * (ctrl**2)
+        alive_bonus = 5.0 if not terminated else 0.0
+
+        # --- 总奖励 ---
+        reward = interp_reward + alive_bonus - vel_penalty - ctrl_penalty
+
+        reward_info = {
+            "interp_reward": interp_reward,
+            "progress_ratio": progress_ratio,
+            "dist_to_goal": -dist_to_goal,
+            "dist_to_init": dist_to_init,
+            "velocity_penalty": -vel_penalty,
+            "ctrl_penalty": -ctrl_penalty,
+            "alive_bonus": alive_bonus,
+        }
+
+        return reward, reward_info
+
 
     def compute_reward_test(self, x, y, terminated):
         # --- 获取状态变量 ---
