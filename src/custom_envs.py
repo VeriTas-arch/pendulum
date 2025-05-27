@@ -108,7 +108,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             # self.init_qpos = np.array([0.0, 0.0, 0.0])
 
             # init with a small angle offset
-            self.init_qpos = np.array([0.0, 0.13044601, -0.52502749])
+            self.init_qpos = np.array([0.0, 0.13, -0.5])
 
             # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
             # amp = 1.0
@@ -140,13 +140,16 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         x, _, y = self.data.site_xpos[4]
         observation = self._get_obs()
 
+        reward, reward_info = None, None
+
         if self.mode == "stable":
-            terminated = bool(y <= 0.1)
+            terminated = bool(y <= 0.0)
+            reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
         elif self.mode == "test":
             terminated = False
+            reward, reward_info = self.compute_reward_test_2(x, y, terminated)
 
         # reward, reward_info = self._get_rew(x, y, terminated)
-        reward, reward_info = self.compute_reward_stable_test(x, y, terminated)
 
         info = reward_info
 
@@ -273,8 +276,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # 奖励项
         y_reward = 2.0 * np.exp(-20 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
         angle_reward = 1.0 * np.exp(-5 * (theta_align) ** 2)  # 角度差越小越好
-        speed_penalty = 0.05 * (v0 ** 2 + v1 ** 2 + v2 ** 2)
-        ctrl_penalty = 0.01 * (ctrl ** 2)
+        speed_penalty = 0.05 * (v0**2 + v1**2 + v2**2)
+        ctrl_penalty = 0.01 * (ctrl**2)
 
         # 如果稳定时速度足够小，额外奖励
         stable_bonus = 0
@@ -285,7 +288,14 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         alive_bonus = 1.0 if not terminated else 0.0
 
         # 总奖励
-        reward = y_reward + angle_reward + stable_bonus + alive_bonus - speed_penalty - ctrl_penalty
+        reward = (
+            y_reward
+            + angle_reward
+            + stable_bonus
+            + alive_bonus
+            - speed_penalty
+            - ctrl_penalty
+        )
 
         reward_info = {
             "y_reward": y_reward,
@@ -297,7 +307,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
-
 
     def compute_reward_test(self, x, y, terminated):
         # --- 获取状态变量 ---
