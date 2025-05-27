@@ -7,7 +7,6 @@ import pygame
 import utils
 from custom_wrapper import PerturbWrapper
 
-
 MODE = "stable"  # test for swing up, stable for stable control
 
 LIN_EXTRA = None
@@ -45,11 +44,7 @@ gym.register(
 )
 
 lin_env = PerturbWrapper(
-    gym.make(
-        "CustomInvertedDoublePendulum-v1",
-        render_mode="human",
-        mode=MODE,
-    )
+    gym.make("CustomInvertedDoublePendulum-v1", render_mode="human", mode=MODE)
 )
 rot_env = PerturbWrapper(
     gym.make(
