@@ -141,7 +141,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         observation = self._get_obs()
 
         if self.mode == "stable":
-            terminated = bool(y <= 0.2)
+            terminated = bool(y <= 0.1)
         elif self.mode == "test":
             terminated = False
 
@@ -264,41 +264,36 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
     def compute_reward_stable_test(self, x, y, terminated):
         theta1, theta2 = self.data.qpos[1], self.data.qpos[2]
         v0, v1, v2 = self.data.qvel
-        ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
+        ctrl = self.data.ctrl[0]
 
-        y_target = 0.5365
-        y_reward = 3.0 * np.exp(-5 * (y_target - y) ** 2)  # 最高点附近奖励最大
+        # 参数
+        y_target = 0.5365  # 稳态的 y 高度
+        theta_align = abs(theta1 - theta2)
 
-        # 姿态奖励：杆之间尽量对齐（差值越小越好）
-        posture_alignment = np.exp(-4 * (theta1 - theta2) ** 2)
+        # 奖励项
+        y_reward = 2.0 * np.exp(-20 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
+        angle_reward = 1.0 * np.exp(-5 * (theta_align) ** 2)  # 角度差越小越好
+        speed_penalty = 0.05 * (v0 ** 2 + v1 ** 2 + v2 ** 2)
+        ctrl_penalty = 0.01 * (ctrl ** 2)
 
-        # 控制惩罚
-        ctrl_penalty = 0.1 * ctrl_penalty
+        # 如果稳定时速度足够小，额外奖励
+        stable_bonus = 0
+        if abs(v1) < 0.3 and abs(v2) < 0.3:
+            stable_bonus = 1.0
 
-        # 速度惩罚（在高点时惩罚更明显）
-        vel_penalty = 0.005 * (v0 ** 2 + v1 ** 2 + v2 ** 2)
-        if y > 0.4:
-            vel_penalty += 0.02 * (v1 ** 2 + v2 ** 2)
-
-        # 顶点减速奖励
-        peak_slow_bonus = 0
-        if y > 0.5 and abs(v1) < 0.5 and abs(v2) < 0.5:
-            peak_slow_bonus = 1.5 * (1.0 - abs(v1) - abs(v2))
-
-        # 存活奖励
-        alive_bonus = 1.0 * int(not terminated)
+        # 活着就奖励
+        alive_bonus = 1.0 if not terminated else 0.0
 
         # 总奖励
-        reward = y_reward + posture_alignment + peak_slow_bonus + alive_bonus \
-                - ctrl_penalty - vel_penalty
+        reward = y_reward + angle_reward + stable_bonus + alive_bonus - speed_penalty - ctrl_penalty
 
         reward_info = {
             "y_reward": y_reward,
-            "posture_alignment": posture_alignment,
-            "velocity_penalty": -vel_penalty,
-            "ctrl_penalty": -ctrl_penalty,
-            "peak_slow_bonus": peak_slow_bonus,
+            "angle_reward": angle_reward,
+            "stable_bonus": stable_bonus,
             "alive_bonus": alive_bonus,
+            "speed_penalty": -speed_penalty,
+            "ctrl_penalty": -ctrl_penalty,
         }
 
         return reward, reward_info
