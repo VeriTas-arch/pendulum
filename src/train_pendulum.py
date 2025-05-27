@@ -8,8 +8,8 @@ from custom_callback import LoggingCallback
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
-EXTRA = "new_obs_2"  # 额外的后缀，不加则设为 None
+LOAD_MODEL = False  # 是否加载模型
+EXTRA = "new_obs_3"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -110,7 +110,7 @@ elif ENV_TYPE == 2:
         "CustomRotaryInvertedDoublePendulum-v1",
         n_envs=32,
         wrapper_class=gym.wrappers.TimeLimit,
-        wrapper_kwargs={"max_episode_steps": 4000},
+        wrapper_kwargs={"max_episode_steps": 2000},
         env_kwargs={
             "mode": MODE,
             # "render_mode": "human"
@@ -124,7 +124,7 @@ elif ENV_TYPE == 2:
             model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, tensorboard_log=str(utils.LOG_DIR))
 
         model.learn(
-            total_timesteps=1e6,
+            total_timesteps=1e7,
             callback=LoggingCallback(
                 log_interval=1000,
                 model_name="SAC",
