@@ -121,7 +121,13 @@ elif ENV_TYPE == 2:
         if LOAD_MODEL:
             model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
         else:
-            model = SAC("MlpPolicy", env, verbose=1, learning_rate=1e-4, tensorboard_log=str(utils.LOG_DIR))
+            model = SAC(
+                "MlpPolicy",
+                env,
+                verbose=1,
+                learning_rate=1e-4,
+                tensorboard_log=str(utils.LOG_DIR),
+            )
 
         model.learn(
             total_timesteps=1e7,

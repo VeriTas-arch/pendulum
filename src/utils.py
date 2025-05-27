@@ -1,6 +1,6 @@
 from pathlib import Path
-import numpy as np
 
+import numpy as np
 from stable_baselines3 import PPO, SAC
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录

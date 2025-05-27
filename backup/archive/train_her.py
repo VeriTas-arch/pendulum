@@ -1,7 +1,7 @@
-from stable_baselines3 import SAC
-from stable_baselines3.her import HerReplayBuffer
 import gymnasium as gym
+from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.her import HerReplayBuffer
 
 import utils
 from custom_callback import LoggingCallback

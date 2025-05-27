@@ -410,7 +410,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         if y > 0.4:
             angle_bonus = (
-                np.exp(-5 * abs(theta1 - theta2) -7 * abs(np.sin(theta1))) * 2
+                np.exp(-5 * abs(theta1 - theta2) - 7 * abs(np.sin(theta1))) * 2
             )
             posture_reward = 3 * y + angle_bonus
             ctrl_penalty = np.sum(self.data.ctrl[0] ** 2)
@@ -463,23 +463,23 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             uprightness_penalty = theta1**2 + theta2**2
 
             # 综合姿态奖励项（越小越好，用 exp 凸显直立的优势）
-            angle_bonus = np.exp(-6 * angle_diff_penalty - 6 * uprightness_penalty) * 3.0
+            angle_bonus = (
+                np.exp(-6 * angle_diff_penalty - 6 * uprightness_penalty) * 3.0
+            )
 
             # 基于 y 高度的基本奖励
             posture_reward = 3 * y + angle_bonus
 
         # === 速度惩罚项 ===
-        vel_penalty = (
-            (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.54 + y)
-            + 7e-2 * ctrl_penalty
-        )
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
+            0.54 + y
+        ) + 7e-2 * ctrl_penalty
         if y > 0.4:
             vel_penalty += (v2**2) * 0.1
 
         # === 存活奖励 ===
-        alive_bonus = (
-            (posture_reward - 15 * (y - target_pos[2]) ** 2)
-            * int(y > 0.5 and not terminated)
+        alive_bonus = (posture_reward - 15 * (y - target_pos[2]) ** 2) * int(
+            y > 0.5 and not terminated
         )
 
         # === 位置惩罚（不偏离 x 轴） ===
@@ -491,13 +491,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             peak_slow_bonus = 3 * max((1.2 - abs(v2) - abs(v1)), 0)
 
         # === 最终 reward ===
-        reward = (
-            alive_bonus
-            - dist_penalty
-            - vel_penalty
-            + peak_slow_bonus
-            + shift
-        )
+        reward = alive_bonus - dist_penalty - vel_penalty + peak_slow_bonus + shift
 
         reward_info = {
             "reward_survive": alive_bonus,
@@ -510,7 +504,6 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         }
 
         return reward, reward_info
-
 
 
 class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
