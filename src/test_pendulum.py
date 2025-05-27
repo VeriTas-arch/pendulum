@@ -9,10 +9,10 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs_2"  # 额外的后缀，不加则设为 None
+EXTRA = "new_obs_3"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -104,7 +104,7 @@ while not done:
     # 模型预测 + 应用扰动
     _, _, y = env.unwrapped.data.site_xpos[4]
 
-    print("qpos:", env.unwrapped.data.qpos)
+    # print("qpos:", env.unwrapped.data.qpos)
 
     # alpha = np.clip((y - 0.45) / (0.55 - 0.45), 0.0, 1.0)
 
@@ -119,7 +119,7 @@ while not done:
     # print(reward)
     # print(info)
 
-    # print("action:", action)
+    print("action:", action)
 
     if y > 0.5:
         if y > maxy:
