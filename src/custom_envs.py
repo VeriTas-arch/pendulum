@@ -106,17 +106,17 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         self.vel_history.clear()
 
-        # angle_offset = np.pi / 36
-        # sign = random.choice([-1, 1])
+        angle_offset = np.pi / 36
+        sign = random.choice([-1, 1])
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            self.init_qpos = np.array([0.0, 0.0, 0.0])
+            # self.init_qpos = np.array([0.0, 0.0, 0.0])
 
             # init with a small angle offset
             # self.init_qpos = np.array([0.0, 0.13, -0.52])
 
-            # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
+            self.init_qpos = np.array([0.0, sign * angle_offset, 0])
             # amp = 1.0
             # self.init_qvel = np.array([0.0, -0.8 * amp, 0.5 * amp])
         else:
@@ -153,8 +153,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
             # 临时设置 stable 模式也不终止
             # terminated = False
-            reward, reward_info = self._get_rew(x, y, terminated)
-            # reward, reward_info = self.compute_reward_stable(x, y, terminated)
+            # reward, reward_info = self._get_rew(x, y, terminated)
+            reward, reward_info = self.compute_reward_stable_test_1(x, y, terminated)
         elif self.mode == "test":
             terminated = False
             reward, reward_info = self.compute_reward_test_4(x, y, terminated)
@@ -313,6 +313,42 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             "stable_bonus": stable_bonus,
             "alive_bonus": alive_bonus,
             "speed_penalty": -speed_penalty,
+            "ctrl_penalty": -ctrl_penalty,
+        }
+
+        return reward, reward_info
+
+    def compute_reward_stable_test_1(self, x, y, terminated):
+        # 状态量
+        v0, v1, v2 = self.data.qvel
+        theta0, theta1, theta2 = self.data.qpos
+        ctrl = self.data.ctrl[0] if self.data.ctrl is not None else 0.0
+
+        # --- 稳摆奖励项 ---
+        # 理想末端位置（旋转摆上端竖直向上）
+        x_goal, y_goal = 0.2159, 0.5365
+        dist_penalty = (
+            5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
+        )
+
+        # --- 姿态角惩罚（靠近竖直） ---
+        angle_penalty = 0.1 * (theta1**2 + theta2**2)
+
+        # --- 控制稳定性惩罚 ---
+        vel_penalty = 0.01 * (v0**2 + v1**2 + v2**2)
+        ctrl_penalty = 0.001 * (ctrl**2)
+
+        # --- 存活奖励 ---
+        alive_bonus = self._healthy_reward if not terminated else 0.0
+
+        # --- 总奖励 ---
+        reward = alive_bonus - dist_penalty - vel_penalty - ctrl_penalty - angle_penalty
+
+        reward_info = {
+            "reward_survive": alive_bonus,
+            "distance_penalty": -dist_penalty,
+            "angle_penalty": -angle_penalty,
+            "velocity_penalty": -vel_penalty,
             "ctrl_penalty": -ctrl_penalty,
         }
 
