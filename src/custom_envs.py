@@ -148,7 +148,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         reward, reward_info = None, None
 
         if self.mode == "stable":
-            terminated = bool(y <= 2.0)
+            # 临时设置 stable 模式也不终止
+            terminated = False
             reward, reward_info = self.compute_reward_stable_test_2(x, y, terminated)
         elif self.mode == "test":
             terminated = False
@@ -321,10 +322,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl = self.data.ctrl[0]
 
         # 初始状态 & 目标状态
-        # q_init = np.array([0.13, -0.52])
+        q_init = np.array([0.13, -0.52])
 
         # 使用另一状态作为初始状态，避免摆杆始终受到惩罚而没有奖励
-        q_init = np.array([np.pi / 2, 0.0])
+        # q_init = np.array([np.pi/2, 0.0])
         q_goal = np.array([0.0, 0.0])
         q_now = np.array([theta1, theta2])
 
