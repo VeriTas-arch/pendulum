@@ -8,8 +8,8 @@ from custom_callback import LoggingCallback
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
-EXTRA = "new_obs_3"  # 额外的后缀，不加则设为 None
+LOAD_MODEL = False  # 是否加载模型
+EXTRA = "new_obs_no_limit"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
@@ -110,9 +110,10 @@ elif ENV_TYPE == 2:
         "CustomRotaryInvertedDoublePendulum-v1",
         n_envs=32,
         wrapper_class=gym.wrappers.TimeLimit,
-        wrapper_kwargs={"max_episode_steps": 2000},
+        wrapper_kwargs={"max_episode_steps": 1000},
         env_kwargs={
             "mode": MODE,
+            "custom_xml_file": utils.PINOCCHIO_XML_DIR
             # "render_mode": "human"
         },
     )

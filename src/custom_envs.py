@@ -110,10 +110,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
-            # self.init_qpos = np.array([0.0, 0.0, 0.0])
+            self.init_qpos = np.array([0.0, 0.0, 0.0])
 
             # init with a small angle offset
-            self.init_qpos = np.array([0.0, 0.13, -0.52])
+            # self.init_qpos = np.array([0.0, 0.13, -0.52])
 
             # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
             # amp = 1.0
@@ -148,14 +148,15 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         reward, reward_info = None, None
 
         if self.mode == "stable":
+            terminated = bool(y <= 0.0)
+
             # 临时设置 stable 模式也不终止
-            terminated = False
-            reward, reward_info = self.compute_reward_stable_test_2(x, y, terminated)
+            # terminated = False
+            # reward, reward_info = self._get_rew(x, y, terminated)
+            reward, reward_info = self.compute_reward_stable(x, y, terminated)
         elif self.mode == "test":
             terminated = False
             reward, reward_info = self.compute_reward_test_4(x, y, terminated)
-
-        # reward, reward_info = self._get_rew(x, y, terminated)
 
         info = reward_info
 
@@ -280,7 +281,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         theta_align = abs(theta1 - theta2)
 
         # 奖励项
-        y_reward = 2.0 * np.exp(-20 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
+        y_reward = 2.0 * np.exp(-10 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
         angle_reward = 2.0 * np.exp(
             -5 * (theta_align) ** 2 - 5 * theta1**2
         )  # 角度差越小越好
