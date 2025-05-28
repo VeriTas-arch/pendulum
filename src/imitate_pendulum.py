@@ -1,13 +1,13 @@
+import gymnasium as gym
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
 from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
-import utils
-import gymnasium as gym
-
-import torch
-import torch.optim as optim
-import torch.nn as nn
-import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
+
+import utils
 
 MODE = "test"
 
@@ -69,10 +69,7 @@ env = make_vec_env(
     n_envs=32,
     wrapper_class=gym.wrappers.TimeLimit,
     wrapper_kwargs={"max_episode_steps": 1000},
-    env_kwargs={
-        "mode": MODE,
-        "custom_xml_file": utils.PINOCCHIO_XML_DIR,
-    },
+    env_kwargs={"mode": MODE, "custom_xml_file": utils.PINOCCHIO_XML_DIR},
 )
 
 # 正式模型
