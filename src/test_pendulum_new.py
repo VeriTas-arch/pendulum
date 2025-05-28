@@ -13,7 +13,7 @@ MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs_no_limit"  # 额外的后缀，不加则设为 None
+EXTRA = "test_obs_no_limit"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -34,27 +34,10 @@ screen = pygame.display.set_mode((600, 450))
 pygame.display.set_caption("Perturbation Controller")
 font = pygame.font.SysFont("consolas", 24)
 
-# 初始化环境和模型
-if ENV_TYPE == 0:
-    raise ValueError(
-        "Pendulum-v1 is not supported in the perturbation mode now."
-        " Refer to `test_pendulum_old.py` if you want to test it."
-    )
-
-elif ENV_TYPE == 1:
-    gym.register(
-        id="CustomInvertedDoublePendulum-v1",
-        entry_point="custom_envs:CustomInvertedDoublePendulumEnv",
-    )
-    env = PerturbWrapper(
-        gym.make("CustomInvertedDoublePendulum-v1", render_mode="human", mode=MODE)
-    )
-    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-
-elif ENV_TYPE == 2:
+if ENV_TYPE == 2:
     gym.register(
         id="CustomRotaryInvertedDoublePendulum-v1",
-        entry_point="custom_envs:CustomRotaryInvertedDoublePendulumEnv",
+        entry_point="new_envs:CustomRotaryInvertedDoublePendulumEnv",
     )
     env = PerturbWrapper(
         gym.make(
@@ -63,16 +46,6 @@ elif ENV_TYPE == 2:
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
     # stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
-
-elif ENV_TYPE == 3:
-    gym.register(
-        id="CustomRotaryInvertedPendulum-v1",
-        entry_point="custom_envs:CustomRotaryInvertedPendulumEnv",
-    )
-    env = PerturbWrapper(
-        gym.make("CustomRotaryInvertedPendulum-v1", render_mode="human", mode=MODE)
-    )
-    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
 
 else:
     raise NotImplementedError(
