@@ -1,7 +1,7 @@
 import logging
 import random  # noqa: F401
 from pathlib import Path
-
+from collections import deque
 import numpy as np
 from gymnasium import spaces
 from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
@@ -96,10 +96,15 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             f"Custom Rotary Inverted Double Pendulum Env initialized with mode: {mode}"
         )
 
+        self.vel_history = deque(maxlen=10)
+
         high = np.inf * np.ones(9, dtype=np.float32)
         self.observation_space = spaces.Box(low=-high, high=high, dtype=np.float32)
 
     def reset_model(self):
+
+        self.vel_history.clear()
+
         # angle_offset = np.pi / 36
         # sign = random.choice([-1, 1])
         if self.mode == "test":
@@ -108,10 +113,10 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             # self.init_qpos = np.array([0.0, 0.0, 0.0])
 
             # init with a small angle offset
-            self.init_qpos = np.array([0.0, 0.5, -0.5])
+            self.init_qpos = np.array([0.0, 0.13, -0.52])
 
             # self.init_qpos = np.array([0.0, sign * angle_offset, 0])
-            amp = 1.0
+            # amp = 1.0
             # self.init_qvel = np.array([0.0, -0.8 * amp, 0.5 * amp])
         else:
             raise ValueError(
@@ -275,7 +280,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # 奖励项
         y_reward = 2.0 * np.exp(-20 * (y - y_target) ** 2)  # y靠近目标位置时奖励高
-        angle_reward = 2.0 * np.exp(-5 * (theta_align) ** 2 -5*theta1**2)  # 角度差越小越好
+        angle_reward = 2.0 * np.exp(
+            -5 * (theta_align) ** 2 - 5 * theta1**2
+        )  # 角度差越小越好
         speed_penalty = 0.05 * (v0**2 + v1**2 + v2**2)
         ctrl_penalty = 0.01 * (ctrl**2)
 
@@ -314,7 +321,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl = self.data.ctrl[0]
 
         # 初始状态 & 目标状态
-        q_init = np.array([0.1, -0.4])
+        q_init = np.array([0.13, -0.52])
         q_goal = np.array([0.0, 0.0])
         q_now = np.array([theta1, theta2])
 
@@ -329,28 +336,37 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         progress_ratio = progress_ratio * 2 - 1
 
         # 2. 基于插值的奖励（靠近目标越多，奖励越大）
-        interp_reward = 5.0 * progress_ratio  # 线性插值
+        interp_reward = 3.0 * progress_ratio  # 线性插值
 
         # --- 惩罚项 ---
-        vel_penalty = 0.05 * (v0**2 + v1**2 + v2**2)
+
+        # --- 累计速度惩罚 ---
+        vel_norm_sq = v0**2 + v1**2 + v2**2
+        self.vel_history.append(vel_norm_sq)
+
+        if len(self.vel_history) > 0:
+            integrated_vel_penalty = 0.05 * (sum(self.vel_history) / len(self.vel_history))
+        else:
+            integrated_vel_penalty = 0.0
+
         ctrl_penalty = 0.01 * (ctrl**2)
         alive_bonus = 5.0 if not terminated else 0.0
 
         # --- 总奖励 ---
-        reward = interp_reward + alive_bonus - vel_penalty - ctrl_penalty
+        reward = interp_reward + alive_bonus - integrated_vel_penalty - ctrl_penalty
 
         reward_info = {
             "interp_reward": interp_reward,
             "progress_ratio": progress_ratio,
             "dist_to_goal": -dist_to_goal,
             "dist_to_init": dist_to_init,
-            "velocity_penalty": -vel_penalty,
+            "velocity_penalty": -integrated_vel_penalty,
+            "vel_penalty_raw": -vel_norm_sq,
             "ctrl_penalty": -ctrl_penalty,
             "alive_bonus": alive_bonus,
         }
 
         return reward, reward_info
-
 
     def compute_reward_test(self, x, y, terminated):
         # --- 获取状态变量 ---
@@ -579,10 +595,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             posture_reward += 3 * y
 
         # 速度惩罚，防止大幅摆动
-        vel_penalty = (
-            (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (0.54 + y)
-            + 7e-2 * ctrl_penalty
-        )
+        vel_penalty = (7 * v0**2 + 1 * v1**2 + 2 * v2**2) * 7e-3 * (
+            0.54 + y
+        ) + 7e-2 * ctrl_penalty
         if y > 0.4:
             vel_penalty += (v2**2) * 0.1
 
