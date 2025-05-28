@@ -118,7 +118,7 @@ while not done:
     obs, reward, terminated, truncated, info = env.step(action)
 
     # print(reward)
-    # print(info)
+    print(info)
 
     # print("action:", action)
 
