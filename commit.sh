@@ -10,4 +10,3 @@ git push
 echo "Commit success (?)"
 echo "Press any key to continue..."
 read input
-
