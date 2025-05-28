@@ -3,6 +3,7 @@ from pathlib import Path
 import gymnasium as gym
 import numpy as np
 import pygame
+import time
 
 import utils
 from custom_wrapper import PerturbWrapper
@@ -12,7 +13,7 @@ MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs_2"  # 额外的后缀，不加则设为 None
+EXTRA = "new_obs_3"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -119,12 +120,13 @@ while not done:
     # print(reward)
     # print(info)
 
-    print("action:", action)
+    # print("action:", action)
 
     if y > 0.5:
         if y > maxy:
             maxy = y
-        print("maxy:", maxy)
+        # print("maxy:", maxy)
+        print("qpos:", env.unwrapped.data.qpos)
         v0, v1, v2 = env.unwrapped.data.qvel
         # print("v0:", v0, "v1:", v1, "v2:", v2)
 
@@ -144,6 +146,7 @@ while not done:
     screen.blit(text, (20, 40))
 
     pygame.display.flip()
+    time.sleep(0.02)
     clock.tick(60)
 
 env.close()
