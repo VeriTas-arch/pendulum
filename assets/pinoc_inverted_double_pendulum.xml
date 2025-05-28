@@ -36,9 +36,9 @@
 
                     <!-- Link 2 (medium pendulum) -->
                     <body name="link2" pos="0 0 0.2">
-                        <!-- <joint name="hinge2" type="hinge" axis="1 0 0" limited="false" /> -->
-                        <joint name="hinge2" type="hinge" axis="1 0 0" limited="true"
-                            range="-0.5236 0.5236" />
+                        <joint name="hinge2" type="hinge" axis="1 0 0" limited="false" />
+                        <!-- <joint name="hinge2" type="hinge" axis="1 0 0" limited="true"
+                            range="-0.5236 0.5236" /> -->
                         <!-- <inertial pos="0 0 0.16825" mass="0.127" diaginertia="0.001 0.001 0.001" /> -->
 
                         <!-- From joint upward -->
@@ -56,6 +56,6 @@
 
     <actuator>
         <!-- Rotary base actuator -->
-        <motor name="rotary_motor_act" joint="rotary_motor" ctrlrange="-1 1" gear="100" />
+        <motor name="rotary_motor_act" joint="rotary_motor" ctrlrange="-1 1" gear="20" />
     </actuator>
 </mujoco>
