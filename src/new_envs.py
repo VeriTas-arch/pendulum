@@ -1,7 +1,8 @@
 import logging
 import random  # noqa: F401
-from pathlib import Path
 from collections import deque
+from pathlib import Path
+
 import numpy as np
 from gymnasium import spaces
 from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv
@@ -10,6 +11,7 @@ ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 RDIP_XML_DIR = f"{ASSET_DIR}/rotary_inverted_double_pendulum.xml"
 
 # ! ANOTHER OBSERVATION SPACE TEST
+
 
 class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
     def __init__(self, mode=None, custom_xml_file=RDIP_XML_DIR, *args, **kwargs):

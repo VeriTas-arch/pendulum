@@ -1,9 +1,9 @@
+import time
 from pathlib import Path
 
 import gymnasium as gym
 import numpy as np
 import pygame
-import time
 
 import utils
 from custom_wrapper import PerturbWrapper

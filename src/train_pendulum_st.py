@@ -113,7 +113,7 @@ elif ENV_TYPE == 2:
         wrapper_kwargs={"max_episode_steps": 1000},
         env_kwargs={
             "mode": MODE,
-            "custom_xml_file": utils.PINOCCHIO_XML_DIR
+            "custom_xml_file": utils.PINOCCHIO_XML_DIR,
             # "render_mode": "human"
         },
     )

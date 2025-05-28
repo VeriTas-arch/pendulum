@@ -1,7 +1,8 @@
 import logging
 import random  # noqa: F401
-from pathlib import Path
 from collections import deque
+from pathlib import Path
+
 import numpy as np
 from gymnasium import spaces
 from gymnasium.envs.mujoco.inverted_double_pendulum_v5 import InvertedDoublePendulumEnv

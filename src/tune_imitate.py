@@ -57,6 +57,4 @@ if ENV_TYPE == 2:
         raise NotImplementedError
 
 else:
-    raise NotImplementedError(
-        f"Environment type {ENV_TYPE} is not supported. "
-    )
+    raise NotImplementedError(f"Environment type {ENV_TYPE} is not supported. ")
