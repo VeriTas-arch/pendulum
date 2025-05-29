@@ -106,8 +106,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         self.vel_history.clear()
 
-        angle_offset = np.pi / 18
+        angamp = 1.0
+        angle_offset_1 = 0.16
+        angle_offset_2 = 0.36
+
         sign = random.choice([-1, 1])
+
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
         elif self.mode == "stable":
@@ -116,9 +120,12 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             # init with a small angle offset
             # self.init_qpos = np.array([0.0, 0.13, -0.52])
 
-            self.init_qpos = np.array([0.0, sign * angle_offset, 0])
-            # amp = 1.0
-            # self.init_qvel = np.array([0.0, -0.8 * amp, 0.5 * amp])
+            self.init_qpos = np.array([0.0, sign * angamp* angle_offset_1, -sign * angamp*angle_offset_2])
+            amp = 0.4
+            velo1 = np.random.normal(0.7 * amp, 0.005)
+            velo2 = np.random.normal(1 * amp, 0.005)
+
+            self.init_qvel = np.array([0.0, -sign*velo1, sign*velo2])
         else:
             raise ValueError(
                 "Invalid mode. Choose 'test' for swing up task, 'stable' for stable control task."

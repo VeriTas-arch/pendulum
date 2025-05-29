@@ -41,7 +41,7 @@ if ENV_TYPE == 2:
             )
 
         model.learn(
-            total_timesteps=1e7,
+            total_timesteps=1e6,
             callback=LoggingCallback(
                 log_interval=1000,
                 model_name="SAC",
