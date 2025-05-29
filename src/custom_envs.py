@@ -158,7 +158,9 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         elif self.mode == "test":
             terminated = False
             # reward, reward_info = self.compute_reward_test_4(x, y, terminated)
-            reward, reward_info = self.compute_reward_swingup_to_stabilize(x, y, terminated)
+            reward, reward_info = self.compute_reward_swingup_to_stabilize(
+                x, y, terminated
+            )
 
         info = reward_info
 
@@ -328,9 +330,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # --- 稳摆奖励项 ---
         # 理想末端位置（旋转摆上端竖直向上）
         x_goal, y_goal = 0.2159, 0.5365
-        dist_penalty = (
-            5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
-        )
+        dist_penalty = 5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
 
         # --- 姿态角惩罚（靠近竖直） ---
         angle_penalty = 0.1 * (theta1**2 + theta2**2)
@@ -698,7 +698,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         ctrl_penalty = 0.2 * np.sum(ctrl**2)
 
         # --- 阶段判断 ---
-        uprightness = theta1**2 + (theta1+theta2)**2
+        uprightness = theta1**2 + (theta1 + theta2) ** 2
         angle_diff = abs(theta1 + theta2) + abs(theta1)
 
         # === 起摆阶段奖励 ===
@@ -725,7 +725,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             dist_penalty = 5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
 
             # 姿态角惩罚（更接近竖直）
-            angle_penalty = 0.1 * (theta1**2 + (theta1+theta2)**2)
+            angle_penalty = 0.1 * (theta1**2 + (theta1 + theta2) ** 2)
 
             # 控制惩罚加强
             ctrl_penalty *= 1.5
@@ -735,10 +735,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             peak_slow_bonus = 2.0 * max(1.2 - speed_sum, 0.0)
 
             # 存活奖励
-            posture_reward = (
-                4.0 * np.exp(-8 * uprightness - 8 * angle_diff)
-                + 4 * y
-            )
+            posture_reward = 4.0 * np.exp(-8 * uprightness - 8 * angle_diff) + 4 * y
 
             alive_bonus = (posture_reward + 3.0) * int(not terminated)
         else:
