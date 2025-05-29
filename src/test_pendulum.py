@@ -13,7 +13,7 @@ MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
+EXTRA = "new_obs_trans"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -137,7 +137,7 @@ while not done:
     doc_str = (
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
-        f"qpos: {env.unwrapped.data.qpos}\n"
+        f"qpos: {np.around(env.unwrapped.data.qpos, 3)}\n"
         f"current perturbation: {perturbation}\n"
         "\n"
         "press 'r' to reset\n"
