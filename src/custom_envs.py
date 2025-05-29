@@ -97,6 +97,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
             f"Custom Rotary Inverted Double Pendulum Env initialized with mode: {mode}"
         )
 
+        self.isUp = False
+
         self.vel_history = deque(maxlen=10)
 
         high = np.inf * np.ones(9, dtype=np.float32)
@@ -104,6 +106,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
     def reset_model(self):
 
+        self.isUp = False
         self.vel_history.clear()
 
         angamp = 1.0

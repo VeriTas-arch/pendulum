@@ -16,8 +16,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 STAGE1_EXTRA = "new_obs_2"
-STAGE2_EXTRA = "new_obs"
-STAGE3_EXTRA = "new_obs_no_limit"
+STAGE2_EXTRA = "new_obs_trans"
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -48,9 +47,8 @@ if ENV_TYPE == 2:
             "CustomRotaryInvertedDoublePendulum-v1", render_mode="human", mode=ENV_MODE
         )
     )
-    stage1_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "test", STAGE1_EXTRA)
-    stage2_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", STAGE2_EXTRA)
-    stage3_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", STAGE3_EXTRA)
+    swingup_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "test", STAGE1_EXTRA)
+    stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", STAGE2_EXTRA)
 
 else:
     raise NotImplementedError(
@@ -64,6 +62,7 @@ perturbation = np.zeros(env.action_space.shape)
 maxy = 0
 done = False
 action = None
+last_action = None
 
 is_up = False
 
@@ -78,55 +77,55 @@ while not done:
             if event.key == pygame.K_r:
                 obs, info = env.reset()
                 # 略微延迟，便于观察
-                pygame.time.delay(2000)
+                pygame.time.delay(1000)
 
     # 处理按键输入扰动
-    perturbation = handle_keyboard_input(step_size=0.2)
+    perturbation = handle_keyboard_input(step_size=0.1)
     env.set_perturbation(perturbation)
 
     # 模型预测 + 应用扰动
-    _, _, y = env.unwrapped.data.site_xpos[4]
-    theta0, theta1, theta2 = env.unwrapped.data.qpos
+    theta1 = env.unwrapped.data.qpos[1]
 
-    print("qpos:", env.unwrapped.data.qpos)
+    action1, _ = swingup_model.predict(obs, deterministic=True)
+    action2, _ = stable_model.predict(obs, deterministic=True)
 
-    # alpha = np.clip((y - 0.45) / (0.55 - 0.45), 0.0, 1.0)
+    # min end 对应alpha=1，max end 对应alpha=0
+    # max_end = 0.22
+    # min_end = 0.16
 
-    # action_swingup = model.predict(obs, deterministic=True)[0]
-    # action_stable = stable_model.predict(obs, deterministic=True)[0]
+    # alpha = (min_end - np.sin(theta1)) / (max_end - min_end)
+    # alpha = np.clip(alpha, 0.0, 1.0)
 
-    # action = (1 - alpha) * action_swingup + alpha * action_stable
+    # action = (1 - alpha) * action1 + alpha * action2
 
-    if abs(theta1) > 0.132 and not is_up:
-        action, _ = stage1_model.predict(obs, deterministic=True)
-    elif 0.04 < abs(theta1) < 0.132:
-        is_up = True
-        # 平滑过渡：根据theta1距离上下限的距离加权stage2和stage3
-        # 0.08对应alpha=1，0.132对应alpha=0
-        alpha = (0.04 - abs(theta1)) / (0.08 - 0.04)
-        alpha = np.clip(alpha, 0.0, 1.0)
-        action2, _ = stage2_model.predict(obs, deterministic=True)
-        action3, _ = stage3_model.predict(obs, deterministic=True)
-        action = (1 - alpha) * action2 + alpha * action3
+    # if abs(theta1) > 0.15 and not env.unwrapped.isUp:
+    #     action, _ = stage1_model.predict(obs, deterministic=True)
+    # elif 0.08 < abs(theta1) < 0.15:
+    #     env.unwrapped.isUp = True
+    #     # 0.08对应alpha=1，0.15对应alpha=0
+    #     alpha = (0.08 - abs(theta1)) / (0.13 - 0.08)
+    #     alpha = np.clip(alpha, 0.0, 1.0)
+    #     action1, _ = stage1_model.predict(obs, deterministic=True)
+    #     action2, _ = stage2_model.predict(obs, deterministic=True)
+    #     action = (1 - alpha) * action1 + alpha * action2
+    # else:
+    #     action, _ = stage2_model.predict(obs, deterministic=True)
+
+    if abs(theta1) > 0.4 and not env.unwrapped.isUp:
+        action, _ = swingup_model.predict(obs, deterministic=True)
+        last_action = action
+    elif 0.18 < abs(theta1) < 0.4:
+        env.unwrapped.isUp = True
+        action = last_action
+        action[0] = 0.15
     else:
-        action, _ = stage3_model.predict(obs, deterministic=True)
-
-    # action, _ = stage1_model.predict(obs, deterministic=True)
+        action, _ = stable_model.predict(obs, deterministic=True)
 
     obs, reward, terminated, truncated, info = env.step(action)
 
     # print(reward)
     # print(info)
-
     # print("action:", action)
-
-    # if y > 0.5:
-    #     if y > maxy:
-    #         maxy = y
-    #     # print("maxy:", maxy)
-    #     print("qpos:", env.unwrapped.data.qpos)
-    #     v0, v1, v2 = env.unwrapped.data.qvel
-    #     print("v0:", v0, "v1:", v1, "v2:", v2)
 
     env.render()
     screen.fill((255, 255, 255))
@@ -135,8 +134,8 @@ while not done:
     doc_str = (
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
-        f"qpos: {env.unwrapped.data.qpos}\n"
-        f"qvel: {env.unwrapped.data.qvel}\n"
+        f"qpos: {np.around(env.unwrapped.data.qpos, 3)}\n"
+        f"qvel: {np.around(env.unwrapped.data.qvel, 3)}\n"
         f"current perturbation: {perturbation}\n"
         "\n"
         "press 'r' to reset\n"
