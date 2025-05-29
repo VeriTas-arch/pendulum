@@ -1,5 +1,5 @@
 import gymnasium as gym
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import SAC
 from stable_baselines3.common.env_util import make_vec_env
 
 import utils

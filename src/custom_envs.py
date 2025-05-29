@@ -106,7 +106,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         self.vel_history.clear()
 
-        angle_offset = np.pi / 36
+        angle_offset = np.pi / 18
         sign = random.choice([-1, 1])
         if self.mode == "test":
             self.init_qpos = np.array([0.0, np.pi, 0.0])
