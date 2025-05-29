@@ -10,10 +10,14 @@ from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "stable"  # test for swing up, stable for stable control
-MODE_STR = "swing up" if MODE == "test" else "stable control"
+ENV_MODE = "test"  # test for swing up, stable for stable control
+MODE_STR = "swing up" if ENV_MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs"  # 额外的后缀，不加则设为 None
+
+
+STAGE1_EXTRA = "new_obs_2"
+STAGE2_EXTRA = "new_obs"
+STAGE3_EXTRA = "new_obs_no_limit"
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -34,45 +38,19 @@ screen = pygame.display.set_mode((600, 450))
 pygame.display.set_caption("Perturbation Controller")
 font = pygame.font.SysFont("consolas", 24)
 
-# 初始化环境和模型
-if ENV_TYPE == 0:
-    raise ValueError(
-        "Pendulum-v1 is not supported in the perturbation mode now."
-        " Refer to `test_pendulum_old.py` if you want to test it."
-    )
-
-elif ENV_TYPE == 1:
-    gym.register(
-        id="CustomInvertedDoublePendulum-v1",
-        entry_point="custom_envs:CustomInvertedDoublePendulumEnv",
-    )
-    env = PerturbWrapper(
-        gym.make("CustomInvertedDoublePendulum-v1", render_mode="human", mode=MODE)
-    )
-    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-
-elif ENV_TYPE == 2:
+if ENV_TYPE == 2:
     gym.register(
         id="CustomRotaryInvertedDoublePendulum-v1",
         entry_point="custom_envs:CustomRotaryInvertedDoublePendulumEnv",
     )
     env = PerturbWrapper(
         gym.make(
-            "CustomRotaryInvertedDoublePendulum-v1", render_mode="human", mode=MODE
+            "CustomRotaryInvertedDoublePendulum-v1", render_mode="human", mode=ENV_MODE
         )
     )
-    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-    # stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
-
-elif ENV_TYPE == 3:
-    gym.register(
-        id="CustomRotaryInvertedPendulum-v1",
-        entry_point="custom_envs:CustomRotaryInvertedPendulumEnv",
-    )
-    env = PerturbWrapper(
-        gym.make("CustomRotaryInvertedPendulum-v1", render_mode="human", mode=MODE)
-    )
-    model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
+    stage1_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "test", STAGE1_EXTRA)
+    stage2_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", STAGE2_EXTRA)
+    stage3_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", STAGE3_EXTRA)
 
 else:
     raise NotImplementedError(
@@ -85,6 +63,10 @@ perturbation = np.zeros(env.action_space.shape)
 
 maxy = 0
 done = False
+action = None
+
+is_up = False
+
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (
@@ -104,6 +86,7 @@ while not done:
 
     # 模型预测 + 应用扰动
     _, _, y = env.unwrapped.data.site_xpos[4]
+    theta0, theta1, theta2 = env.unwrapped.data.qpos
 
     print("qpos:", env.unwrapped.data.qpos)
 
@@ -114,7 +97,16 @@ while not done:
 
     # action = (1 - alpha) * action_swingup + alpha * action_stable
 
-    action, _ = model.predict(obs, deterministic=True)
+    # if abs(theta1) > 0.132 and not is_up:
+    #     action, _ = stage1_model.predict(obs, deterministic=True)
+    # elif 0.08 < abs(theta1) < 0.132:
+    #     is_up = True
+    #     action, _ = stage2_model.predict(obs, deterministic=True)
+    # else:
+    #     action, _ = stage3_model.predict(obs, deterministic=True)
+
+    action, _ = stage1_model.predict(obs, deterministic=True)
+
     obs, reward, terminated, truncated, info = env.step(action)
 
     # print(reward)
@@ -122,13 +114,13 @@ while not done:
 
     # print("action:", action)
 
-    if y > 0.5:
-        if y > maxy:
-            maxy = y
-        # print("maxy:", maxy)
-        print("qpos:", env.unwrapped.data.qpos)
-        v0, v1, v2 = env.unwrapped.data.qvel
-        # print("v0:", v0, "v1:", v1, "v2:", v2)
+    # if y > 0.5:
+    #     if y > maxy:
+    #         maxy = y
+    #     # print("maxy:", maxy)
+    #     print("qpos:", env.unwrapped.data.qpos)
+    #     v0, v1, v2 = env.unwrapped.data.qvel
+    #     print("v0:", v0, "v1:", v1, "v2:", v2)
 
     env.render()
     screen.fill((255, 255, 255))
@@ -138,6 +130,7 @@ while not done:
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
         f"qpos: {env.unwrapped.data.qpos}\n"
+        f"qvel: {env.unwrapped.data.qvel}\n"
         f"current perturbation: {perturbation}\n"
         "\n"
         "press 'r' to reset\n"
