@@ -138,6 +138,7 @@ while not done:
         f"mode: {MODE_STR}\n"
         f"model type: {MODEL_TYPE}\n"
         f"qpos: {np.around(env.unwrapped.data.qpos, 3)}\n"
+        f"qvel: {np.around(env.unwrapped.data.qvel, 3)}\n"
         f"current perturbation: {perturbation}\n"
         "\n"
         "press 'r' to reset\n"

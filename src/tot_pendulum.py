@@ -64,8 +64,6 @@ done = False
 action = None
 last_action = None
 
-is_up = False
-
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (
@@ -89,6 +87,7 @@ while not done:
     action1, _ = swingup_model.predict(obs, deterministic=True)
     action2, _ = stable_model.predict(obs, deterministic=True)
 
+    # ! Failed attempt 1
     # min end 对应alpha=1，max end 对应alpha=0
     # max_end = 0.22
     # min_end = 0.16
@@ -98,6 +97,7 @@ while not done:
 
     # action = (1 - alpha) * action1 + alpha * action2
 
+    # ! Successful attempt 1, yet not elegant
     # if abs(theta1) > 0.15 and not env.unwrapped.isUp:
     #     action, _ = stage1_model.predict(obs, deterministic=True)
     # elif 0.08 < abs(theta1) < 0.15:
@@ -111,6 +111,7 @@ while not done:
     # else:
     #     action, _ = stage2_model.predict(obs, deterministic=True)
 
+    # ! Successful attempt 2, more elegant
     if abs(theta1) > 0.4 and not env.unwrapped.isUp:
         action, _ = swingup_model.predict(obs, deterministic=True)
         last_action = action
