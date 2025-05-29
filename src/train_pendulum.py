@@ -9,7 +9,7 @@ ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvert
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "test"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
-EXTRA = "new_obs_3"  # 额外的后缀，不加则设为 None
+EXTRA = "new_obs_hybrid"  # 额外的后缀，不加则设为 None
 
 
 if ENV_TYPE == 0:
