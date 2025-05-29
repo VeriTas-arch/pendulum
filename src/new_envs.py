@@ -207,9 +207,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         # --- 稳摆奖励项 ---
         # 理想末端位置（旋转摆上端竖直向上）
         x_goal, y_goal = 0.2159, 0.5365
-        dist_penalty = (
-            5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
-        )
+        dist_penalty = 5.0 * ((x - x_goal) ** 2 + (y - y_goal) ** 2)
 
         # --- 姿态角惩罚（靠近竖直） ---
         angle_penalty = 0.1 * (theta1**2 + theta2**2)
