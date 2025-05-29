@@ -97,15 +97,21 @@ while not done:
 
     # action = (1 - alpha) * action_swingup + alpha * action_stable
 
-    # if abs(theta1) > 0.132 and not is_up:
-    #     action, _ = stage1_model.predict(obs, deterministic=True)
-    # elif 0.08 < abs(theta1) < 0.132:
-    #     is_up = True
-    #     action, _ = stage2_model.predict(obs, deterministic=True)
-    # else:
-    #     action, _ = stage3_model.predict(obs, deterministic=True)
+    if abs(theta1) > 0.132 and not is_up:
+        action, _ = stage1_model.predict(obs, deterministic=True)
+    elif 0.04 < abs(theta1) < 0.132:
+        is_up = True
+        # 平滑过渡：根据theta1距离上下限的距离加权stage2和stage3
+        # 0.08对应alpha=1，0.132对应alpha=0
+        alpha = (0.04 - abs(theta1)) / (0.08 - 0.04)
+        alpha = np.clip(alpha, 0.0, 1.0)
+        action2, _ = stage2_model.predict(obs, deterministic=True)
+        action3, _ = stage3_model.predict(obs, deterministic=True)
+        action = (1 - alpha) * action2 + alpha * action3
+    else:
+        action, _ = stage3_model.predict(obs, deterministic=True)
 
-    action, _ = stage1_model.predict(obs, deterministic=True)
+    # action, _ = stage1_model.predict(obs, deterministic=True)
 
     obs, reward, terminated, truncated, info = env.step(action)
 
