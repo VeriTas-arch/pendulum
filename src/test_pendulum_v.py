@@ -94,14 +94,6 @@ while not done:
     # print(info)
     # print("action:", action)
 
-    # if y > 0.5:
-    #     if y > maxy:
-    #         maxy = y
-    #     # print("maxy:", maxy)
-    #     print("qpos:", env.unwrapped.data.qpos)
-    #     v0, v1, v2 = env.unwrapped.data.qvel
-    #     print("v0:", v0, "v1:", v1, "v2:", v2)
-
     env.render()
     screen.fill((255, 255, 255))
 

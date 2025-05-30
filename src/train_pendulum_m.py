@@ -20,7 +20,7 @@ if ENV_TYPE == 2:
         "CustomRotaryInvertedDoublePendulum-v3",
         n_envs=32,
         wrapper_class=gym.wrappers.TimeLimit,
-        wrapper_kwargs={"max_episode_steps": 4000},
+        wrapper_kwargs={"max_episode_steps": 16000},
         env_kwargs={
             "mode": MODE,
             "custom_xml_file": utils.SEMI_HIGH_SPEED_XML_DIR,
