@@ -15,6 +15,7 @@ MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 EXTRA = "high_speed"  # 额外的后缀，不加则设为 None
 
+HIGH_SPEED_XML_DIR = utils.HIGH_SPEED_XML_DIR
 isSemiHighSpeed = EXTRA == "semi_high_speed"
 if isSemiHighSpeed:
     HIGH_SPEED_XML_DIR = utils.SEMI_HIGH_SPEED_XML_DIR
@@ -80,7 +81,7 @@ while not done:
                 pygame.time.delay(1000)
 
     # 处理按键输入扰动
-    perturbation = handle_keyboard_input(step_size=0.1)
+    perturbation = handle_keyboard_input(step_size=0.4)
     env.set_perturbation(perturbation)
 
     # 模型预测 + 应用扰动
