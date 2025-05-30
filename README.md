@@ -38,3 +38,5 @@ def _get_obs(self):
 ```python
 action, _ = model.predict(obs, deterministic=True)
 ```
+
+TODO: Sim2Real
