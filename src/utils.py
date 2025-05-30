@@ -8,6 +8,8 @@ LOG_DIR = Path(__file__).resolve().parent.parent / "log"  # 日志目录
 CSV_DIR = LOG_DIR / "csv"  # CSV目录
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 PINOCCHIO_XML_DIR = f"{ASSET_DIR}/pinoc_inverted_double_pendulum.xml"
+HIGH_SPEED_XML_DIR = f"{ASSET_DIR}/z_inverted_double_pendulum.xml"
+SEMI_HIGH_SPEED_XML_DIR = f"{ASSET_DIR}/m_inverted_double_pendulum.xml"
 
 
 def load_model(env, env_type, model_type, mode, extra=None):

@@ -7,24 +7,23 @@ from custom_callback import LoggingCallback
 
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
-LOAD_MODEL = False  # 是否加载模型
-EXTRA = "test_obs_no_limit"  # 额外的后缀，不加则设为 None
-
+MODE = "stable"  # test for swing up, stable for stable control
+LOAD_MODEL = True  # 是否加载模型
+EXTRA = "semi_high_speed"  # 额外的后缀，不加则设为 None
 
 if ENV_TYPE == 2:
     gym.register(
-        id="CustomRotaryInvertedDoublePendulum-v2",
-        entry_point="new_envs:CustomRotaryInvertedDoublePendulumEnv",
+        id="CustomRotaryInvertedDoublePendulum-v3",
+        entry_point="v_envs:CustomRotaryInvertedDoublePendulumEnv",
     )
     env = make_vec_env(
-        "CustomRotaryInvertedDoublePendulum-v2",
+        "CustomRotaryInvertedDoublePendulum-v3",
         n_envs=32,
         wrapper_class=gym.wrappers.TimeLimit,
-        wrapper_kwargs={"max_episode_steps": 1000},
+        wrapper_kwargs={"max_episode_steps": 4000},
         env_kwargs={
             "mode": MODE,
-            "custom_xml_file": utils.PINOCCHIO_XML_DIR,
+            "custom_xml_file": utils.SEMI_HIGH_SPEED_XML_DIR,
             # "render_mode": "human"
         },
     )
