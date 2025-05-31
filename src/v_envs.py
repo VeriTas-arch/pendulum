@@ -168,7 +168,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
     def reward_stable_1(self, x, y, terminated):
         # 状态量
         v0, v1, v2 = self.data.qvel
-        _, theta1, theta2 = self.data.qpos
+        theta0, theta1, theta2 = self.data.qpos
         ctrl = self.data.ctrl[0] if self.data.ctrl is not None else 0.0
 
         # --- 理想末端位置 ---
@@ -185,7 +185,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         # --- 稳态检测参数 ---
         upright_enough = (theta1**2 + theta2**2) < 0.05  # 角度接近竖直
-        low_speed_enough = (v1**2 + v2**2) < 0.01  # 摆杆低速
+        low_speed_enough = (v0**2 + v1**2 + v2**2) < 0.012  # 摆杆低速
         near_goal = ((x - x_goal) ** 2 + (y - y_goal) ** 2) < 0.0025  # 接近目标位置
 
         # --- 稳定计时器 ---
