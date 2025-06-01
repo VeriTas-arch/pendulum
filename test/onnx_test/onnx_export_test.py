@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 model_dir = utils.model_dir
 data_dir = utils.data_dir
 
+
 # 1. 定义模型结构
 class SimpleCNN(nn.Module):
     def __init__(self):

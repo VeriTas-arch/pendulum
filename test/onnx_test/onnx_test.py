@@ -1,9 +1,10 @@
+import time
+
 import numpy as np
 import onnx_utils as utils
 import onnxruntime as ort
 import torch
 import torch.nn as nn
-import time
 
 model_dir = utils.model_dir
 
