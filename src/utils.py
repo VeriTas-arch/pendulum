@@ -4,6 +4,7 @@ import numpy as np
 from stable_baselines3 import PPO, SAC
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
+ONNX_DIR = Path(__file__).resolve().parent.parent / "onnx"  # ONNX模型目录
 LOG_DIR = Path(__file__).resolve().parent.parent / "log"  # 日志目录
 CSV_DIR = LOG_DIR / "csv"  # CSV目录
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
