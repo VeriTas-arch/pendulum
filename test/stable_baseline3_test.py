@@ -52,7 +52,7 @@ model.learn(total_timesteps=1e5)
 DATA_DIR = f"{Path(__file__).parent.parent}/data"
 model.save(f"{DATA_DIR}/dqn_lunarlander_model_test.zip")
 
-# 加载模型（可选）
+# 加载模型
 # model = DQN.load(f"{DATA_DIR}/dqn_lunarlander_model_test.zip", env=env)
 
 # 评估模型

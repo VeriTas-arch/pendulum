@@ -99,17 +99,17 @@ while not done:
 
     # ! Successful attempt 1, yet not elegant
     # if abs(theta1) > 0.15 and not env.unwrapped.isUp:
-    #     action, _ = stage1_model.predict(obs, deterministic=True)
+    #     action, _ = swingup_model.predict(obs, deterministic=True)
     # elif 0.08 < abs(theta1) < 0.15:
     #     env.unwrapped.isUp = True
     #     # 0.08对应alpha=1，0.15对应alpha=0
     #     alpha = (0.08 - abs(theta1)) / (0.13 - 0.08)
     #     alpha = np.clip(alpha, 0.0, 1.0)
-    #     action1, _ = stage1_model.predict(obs, deterministic=True)
-    #     action2, _ = stage2_model.predict(obs, deterministic=True)
+    #     action1, _ = swingup_model.predict(obs, deterministic=True)
+    #     action2, _ = stable_model.predict(obs, deterministic=True)
     #     action = (1 - alpha) * action1 + alpha * action2
     # else:
-    #     action, _ = stage2_model.predict(obs, deterministic=True)
+    #     action, _ = stable_model.predict(obs, deterministic=True)
 
     # ! Successful attempt 2, more elegant
     if abs(theta1) > 0.4 and not env.unwrapped.isUp:
