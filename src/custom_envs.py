@@ -881,8 +881,9 @@ class CustomRotaryInvertedPendulumEnv(InvertedDoublePendulumEnv):
                 np.cos(self.data.qpos[1:]),
                 np.clip(self.data.qvel, -10, 10),
                 np.clip(self.data.qfrc_constraint, -10, 10)[:1],
-            ]
-        , dtype=np.float32).ravel()
+            ],
+            dtype=np.float32,
+        ).ravel()
 
     def compute_reward(self, x, y, terminated):
         target_pos = np.array([0, 0, 0.5365])
