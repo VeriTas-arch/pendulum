@@ -3,14 +3,13 @@ import pandas as pd
 
 import utils
 
-# CSV 文件路径
 CSV_DIR = utils.CSV_DIR  # CSV目录
 csv_file = f"{CSV_DIR}/SAC_test_new_obs_20250526_100822.csv"
 
 # 读取数据
 df = pd.read_csv(csv_file)
 
-# 可视化：每个指标随 n_updates 变化
+# 可视化
 plt.figure(figsize=(14, 8))
 
 plt.subplot(2, 2, 1)

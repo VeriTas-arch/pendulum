@@ -1,8 +1,7 @@
 **/.vscode
-**/__pycache__/
-/archive
-/repo
 
+**/__pycache__/
 **/MUJOCO_LOG.TXT
 
+/archive
 /test/onnx_test/data/
