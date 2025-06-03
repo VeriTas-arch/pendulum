@@ -1,42 +1,26 @@
-# Implement RL
+# Implement RL on Many Inverted Pendulums
 
-首先获取当前的状态量，函数如下所示。
+- stable and swing-up task of inverted double pendulum
 
-```python
-def _get_obs(self):
-    qpos = self.data.qpos  # [theta_base, theta1, theta2]
-    qvel = self.data.qvel  # [dtheta_base, dtheta1, dtheta2]
+![PPO_DIP_STABLE](./assets/video/PPO_DIP_STABLE.gif)
+![SAC_DIP_TEST](./assets/video/SAC_DIP_TEST.gif)
 
-    theta_base = qpos[0]
-    theta1 = qpos[1]
-    theta2 = qpos[2]
+- stable and swing-up task of rotary inverted pendulum
 
-    dtheta_base = qvel[0]
-    dtheta1 = qvel[1]
-    dtheta2 = qvel[2]
+![SAC_RIP_STABLE](./assets/video/SAC_RIP_STABLE.gif)
+![SAC_RIP_TEST](./assets/video/SAC_RIP_TEST.gif)
 
-    obs = np.array(
-        [
-            np.cos(theta_base),
-            np.sin(theta_base),
-            np.cos(theta1),
-            np.sin(theta1),
-            np.cos(theta2),
-            np.sin(theta2),
-            dtheta_base,
-            dtheta1,
-            dtheta2,
-        ],
-        dtype=np.float32,
-    )
+- first attempt on rotary inverted double pendulum
 
-    return obs
-```
+![SAC_RDIP_STABLE](./assets/video/SAC_RDIP_STABLE.gif)
+![SAC_RDIP_BANNA_UNSTABLE](./assets/video/SAC_RDIP_BANNA_UNSTABLE.gif)
 
-加载模型后，使用如下代码获取当前状态量对应的动作。则`action[0]`为当前输出力矩的归一量（最大为1，最小为-1）。
+- investigate the *BANNA* state
 
-```python
-action, _ = model.predict(obs, deterministic=True)
-```
+![SAC_RDIP_BANNA_STABLE](./assets/video/SAC_RDIP_BANNA_STABLE.gif)
+![SAC_RDIP_BANNA_TEST](./assets/video/SAC_RDIP_BANNA_TEST.gif)
 
-TODO: Sim2Real
+- successful swing-up of rotary inverted double pendulum using manual perturbation and automatic action selection
+
+![SAC_RDIP_BANNA_TOT](./assets/video/SAC_RDIP_BANNA_TOT.gif)
+![SAC_RDIP_TEST](./assets/video/SAC_RDIP_TEST.gif)
