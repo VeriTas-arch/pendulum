@@ -1,12 +1,14 @@
 from pathlib import Path
 
 import numpy as np
-from stable_baselines3 import PPO, SAC
+from stable_baselines3 import PPO, SAC, TD3
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"  # 数据目录
 ONNX_DIR = Path(__file__).resolve().parent.parent / "onnx"  # ONNX模型目录
 LOG_DIR = Path(__file__).resolve().parent.parent / "log"  # 日志目录
 CSV_DIR = LOG_DIR / "csv"  # CSV目录
+CSV_DIR.mkdir(parents=True, exist_ok=True)  # 确保 CSV 目录存在
+
 ASSET_DIR = f"{Path(__file__).parent.parent}/assets"
 PINOCCHIO_XML_DIR = f"{ASSET_DIR}/pinoc_inverted_double_pendulum.xml"
 HIGH_SPEED_XML_DIR = f"{ASSET_DIR}/z_inverted_double_pendulum.xml"
@@ -24,11 +26,18 @@ def load_model(env, env_type, model_type, mode, extra=None):
             model = SAC.load(f"{DATA_DIR}/sac_{env_name}_{mode}_{extra}.zip", env=env)
         else:
             model = SAC.load(f"{DATA_DIR}/sac_{env_name}_{mode}.zip", env=env)
+
     elif model_type == "PPO":
         if extra is not None:
             model = PPO.load(f"{DATA_DIR}/ppo_{env_name}_{mode}_{extra}.zip", env=env)
         else:
             model = PPO.load(f"{DATA_DIR}/ppo_{env_name}_{mode}.zip", env=env)
+
+    elif model_type == "TD3":
+        if extra is not None:
+            model = TD3.load(f"{DATA_DIR}/td3_{env_name}_{mode}_{extra}.zip", env=env)
+        else:
+            model = TD3.load(f"{DATA_DIR}/td3_{env_name}_{mode}.zip", env=env)
     else:
         raise ValueError("Invalid model type. Choose 'SAC' or 'PPO'.")
 
@@ -38,8 +47,8 @@ def load_model(env, env_type, model_type, mode, extra=None):
 def save_model(model, env_type, model_type, mode, extra=None):
     if mode not in ["test", "stable"]:
         raise ValueError("Invalid mode. Choose 'test' or 'stable'.")
-    if model_type not in ["SAC", "PPO", "HER"]:
-        raise ValueError("Invalid model type. Choose 'SAC', 'HER' or 'PPO'.")
+    if model_type not in ["SAC", "PPO", "TD3"]:
+        raise ValueError("Invalid model type. Choose 'SAC', 'TD3' or 'PPO'.")
 
     env_name = get_env_name(env_type)
 
