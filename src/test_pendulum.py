@@ -9,11 +9,11 @@ import utils
 from custom_wrapper import PerturbWrapper
 
 ENV_TYPE = 2
-MODEL_TYPE = "SAC"  # SAC or PPO
-MODE = "test"  # test for swing up, stable for stable control
+MODEL_TYPE = "TD3"  # SAC, PPO or TD3
+MODE = "stable"  # test for swing up, stable for stable control
 MODE_STR = "swing up" if MODE == "test" else "stable control"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-EXTRA = "new_obs_2"  # 额外的后缀，不加则设为 None
+EXTRA = "alg_test"  # 额外的后缀，不加则设为 None
 
 
 def handle_keyboard_input(step_size=0.1):
@@ -54,7 +54,7 @@ elif ENV_TYPE == 1:
 elif ENV_TYPE == 2:
     gym.register(
         id="CustomRotaryInvertedDoublePendulum-v1",
-        entry_point="custom_envs:CustomRotaryInvertedDoublePendulumEnv",
+        entry_point="v_envs:CustomRotaryInvertedDoublePendulumEnv",
     )
     env = PerturbWrapper(
         gym.make(
@@ -62,7 +62,6 @@ elif ENV_TYPE == 2:
         )
     )
     model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, MODE, EXTRA)
-    # stable_model = utils.load_model(env, ENV_TYPE, MODEL_TYPE, "stable", "train_test_3")
 
 elif ENV_TYPE == 3:
     gym.register(
