@@ -8,7 +8,7 @@ from custom_callback import LoggingCallback
 ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
 MODEL_TYPE = "TD3"  # SAC, PPO or TD3
 MODE = "stable"  # test for swing up, stable for stable control
-LOAD_MODEL = True  # 是否加载模型
+LOAD_MODEL = False  # 是否加载模型
 EXTRA = "alg_test"  # 额外的后缀，不加则设为 None
 
 
@@ -155,9 +155,9 @@ elif ENV_TYPE == 2:
             )
 
         model.learn(
-            total_timesteps=1e6,
+            total_timesteps=1e7,
             callback=LoggingCallback(
-                log_interval=1000,
+                log_interval=1500,
                 model_name="TD3",
                 mode=MODE,
                 env_type=ENV_TYPE,

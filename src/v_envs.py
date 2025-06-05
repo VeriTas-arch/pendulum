@@ -99,8 +99,8 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
             # 临时设置 stable 模式也不终止
             # terminated = False
-            reward, reward_info = self._get_rew(x, y, terminated)
-            # reward, reward_info = self.reward_stable_1(x, y, terminated)
+            # reward, reward_info = self._get_rew(x, y, terminated)
+            reward, reward_info = self.reward_stable_1(x, y, terminated)
         elif self.mode == "test":
             terminated = False
             reward, reward_info = self.reward_swingup_to_stabilize(x, y, terminated)
