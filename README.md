@@ -1,5 +1,9 @@
 # Implement RL on Many Inverted Pendulums
 
+This repository contains implementations of Reinforcement Learning (RL) algorithms applied to various inverted pendulum tasks. Refer to the control repo for a more cpmplete view of this research topic: [zirconium](https://github.com/Ancient-Gadget-Laboratory/zirconium)
+
+Below are some simulation showcases:
+
 - stable and swing-up task of inverted double pendulum
 
 ![PPO_DIP_STABLE](./assets/video/PPO_DIP_STABLE.gif)
