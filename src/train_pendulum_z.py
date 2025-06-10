@@ -5,11 +5,11 @@ from stable_baselines3.common.env_util import make_vec_env
 import utils
 from custom_callback import LoggingCallback
 
-ENV_TYPE = 2  # 0 for Pendulum, 1 for InvertedDoublePendulum, 2 for RotaryInvertedDoublePendulum, 3 for RotaryInvertedPendulum
+ENV_TYPE = 2  # 2 for RotaryInvertedDoublePendulum
 MODEL_TYPE = "SAC"  # SAC or PPO
 MODE = "stable"  # test for swing up, stable for stable control
 LOAD_MODEL = True  # 是否加载模型
-EXTRA = "high_speed"  # 额外的后缀，不加则设为 None
+EXTRA = "high_speed"  # 额外的后缀，semi_high_speed, high_speed, alg_test, etc.
 
 if ENV_TYPE == 2:
     gym.register(

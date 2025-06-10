@@ -30,7 +30,6 @@ def keyboard_callback(key):
 
 def control_callback(model, data):
     global impulse
-    # 只在当前帧施加冲量
     data.qfrc_applied[0] = impulse
     impulse = 0.0
 
