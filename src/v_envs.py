@@ -85,20 +85,24 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         self.do_simulation(action, self.frame_skip)
 
-        x, _, y = self.data.site_xpos[4]
+        _, _, y = self.data.site_xpos[4]
+        reward, reward_info = None, None
         observation = self._get_obs()
 
-        reward, reward_info = None, None
+        # absolute angle of the pendulum segments
+        theta0, theta1, theta2 = self._get_theta()
 
         if self.mode == "stable":
             terminated = bool(y <= 0.2)
 
             # 临时设置 stable 模式也不终止
             # terminated = False
-            reward, reward_info = self.reward_stable(x, y, terminated)
+            reward, reward_info = self.reward_stable(theta0, theta1, theta2, terminated)
         elif self.mode == "test":
             terminated = False
-            reward, reward_info = self.reward_swingup(x, y, terminated)
+            reward, reward_info = self.reward_swingup(
+                theta0, theta1, theta2, terminated
+            )
 
         info = reward_info
 
@@ -109,11 +113,7 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
         return observation, reward, terminated, False, info
 
     def _get_obs(self):
-        qpos = self.data.qpos  # [theta0, theta1, theta2]
-
-        theta0 = qpos[0]
-        theta1 = qpos[1]
-        theta2 = qpos[2]
+        theta0, theta1, theta2 = self._get_theta()
 
         obs = np.array(
             [
@@ -133,12 +133,38 @@ class CustomRotaryInvertedDoublePendulumEnv(InvertedDoublePendulumEnv):
 
         return obs
 
-    def reward_stable(self, x, y, terminated):
-        ...
+    def _get_theta(self):
+        qpos = self.data.qpos  # [theta0, theta1, theta2-theta1]
+        return qpos[0], qpos[1], qpos[1] + qpos[2]
 
-        # return reward, reward_info
+    def guassian_function(self, x, mu, sigma):
+        """
+        Gaussian function for reward shaping.
+        """
+        return np.exp(-0.5 * ((x - mu) / sigma) ** 2) / (sigma * np.sqrt(2 * np.pi))
 
-    def reward_swingup(self, x, y, terminated):
+    def reward_stable(self, theta0, theta1, theta2, terminated):
+        reward_theta0 = self.guassian_function(theta0, 0.0, 0.1)
+        reward_theta1 = self.guassian_function(theta1, 0.0, 0.1)
+        reward_theta2 = self.guassian_function(theta2, 0.0, 0.1)
+
+        # normalize the reward
+        reward_raw = reward_theta0 + reward_theta1 + reward_theta2
+        max_gauss = self.guassian_function(0.0, 0.0, 0.1)
+        reward = (reward_raw / (3 * max_gauss)) * 10
+        reward = np.clip(reward, 0, 10)
+
+        reward_info = {
+            "reward_theta0": reward_theta0,
+            "reward_theta1": reward_theta1,
+            "reward_theta2": reward_theta2,
+            "reward_raw": reward_raw,
+            "reward_normalized": reward,
+        }
+
+        return reward, reward_info
+
+    def reward_swingup(self, theta0, theta1, theta2, terminated):
         ...
 
         # return reward, reward_info
